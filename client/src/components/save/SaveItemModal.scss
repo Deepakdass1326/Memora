@@ -1,0 +1,174 @@
+@use '../../styles/mixins' as m;
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  @include m.flex(row, center, center);
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(6px);
+  padding: 16px;
+}
+
+.modal-box {
+  width: 100%; max-width: 520px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+
+  // ── Header ──
+  .modal-header {
+    @include m.flex(row, center, space-between);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-logo {
+    @include m.flex(row, center, flex-start, 10px);
+
+    .mark {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: var(--accent);
+      @include m.flex(row, center, center);
+      color: #fff;
+      font-weight: 700;
+      font-size: .9rem;
+    }
+
+    span { font-weight: 600; color: var(--foreground); font-size: .95rem; }
+  }
+
+  .modal-close {
+    @include m.btn-reset;
+    color: var(--muted-fg);
+    font-size: 20px;
+    padding: 4px;
+    @include m.transition(color);
+    &:hover { color: var(--foreground); }
+  }
+
+  // ── Type chips ──
+  .modal-type-row {
+    @include m.flex(row, center, flex-start, 6px);
+    flex-wrap: wrap;
+    padding: 12px 20px 8px;
+  }
+
+  .type-btn {
+    @include m.btn-reset;
+    @include m.flex(row, center, center, 5px);
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--muted);
+    color: var(--muted-fg);
+    font-size: .75rem;
+    font-weight: 500;
+    @include m.transition;
+
+    &.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--accent);
+    }
+  }
+
+  // ── Form body ──
+  .modal-body {
+    padding: 8px 20px 4px;
+    max-height: 52vh;
+    overflow-y: auto;
+    @include m.flex(column, stretch, flex-start, 14px);
+  }
+
+  .modal-label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--foreground);
+    margin-bottom: 6px;
+  }
+
+  .modal-input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input);
+    color: var(--foreground);
+    font-size: .875rem;
+    font-family: var(--font-body);
+    outline: none;
+    box-sizing: border-box;
+    @include m.transition(border-color);
+
+    &:focus { border-color: var(--accent); }
+    &--ta   { resize: vertical; min-height: 72px; }
+    &::placeholder { color: var(--muted-fg); }
+  }
+
+  .suggested-tags {
+    @include m.flex(row, center, flex-start, 6px);
+    flex-wrap: wrap;
+    margin-top: 6px;
+    .label { font-size: .72rem; color: var(--muted-fg); }
+  }
+
+  .collection-chips {
+    @include m.flex(row, flex-start, flex-start, 6px);
+    flex-wrap: wrap;
+  }
+
+  .collection-chip {
+    @include m.btn-reset;
+    @include m.flex(row, center, center, 5px);
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--muted);
+    color: var(--muted-fg);
+    font-size: .75rem;
+    @include m.transition;
+
+    &.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--accent);
+    }
+  }
+
+  // ── Footer ──
+  .modal-footer {
+    @include m.flex(row, center, flex-end, 8px);
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--muted) 50%, transparent);
+  }
+
+  .btn-ghost {
+    @include m.btn-reset;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    color: var(--muted-fg);
+    font-size: .85rem;
+    @include m.transition;
+    &:hover { color: var(--foreground); }
+  }
+
+  .btn-primary {
+    @include m.btn-reset;
+    @include m.flex(row, center, center, 6px);
+    padding: 7px 18px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 500;
+    @include m.transition(opacity);
+
+    &:hover:not(:disabled) { opacity: .88; }
+    &:disabled { opacity: .55; cursor: not-allowed; }
+  }
+}

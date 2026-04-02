@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, getGraphData } = require('../controllers/item.controller');
+const {
+  getItems, createItem, getItem, updateItem, deleteItem,
+  toggleFavorite, addHighlight, deleteHighlight, getGraphData,
+} = require('../controllers/item.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 router.use(protect);
@@ -10,5 +13,6 @@ router.route('/').get(getItems).post(createItem);
 router.route('/:id').get(getItem).put(updateItem).delete(deleteItem);
 router.patch('/:id/favorite', toggleFavorite);
 router.post('/:id/highlights', addHighlight);
+router.delete('/:id/highlights/:highlightId', deleteHighlight);
 
 module.exports = router;

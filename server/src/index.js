@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
 
 // Route imports
@@ -16,10 +17,44 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Rate limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500,                  // raised from 200
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later.' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes window (was 1 min)
+  max: 100,                  // 100 attempts per 15 min (was 15/min)
+  message: { success: false, message: 'Too many auth attempts, please try again later.' },
+});
+
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:5173',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (
+      !origin || 
+      allowedOrigins.includes(origin) || 
+      origin.startsWith('chrome-extension://') // Allow extension requests
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use('/api', globalLimiter);
 
 // Request logging (dev)
 if (process.env.NODE_ENV !== 'production') {
@@ -30,7 +65,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/collections', collectionRoutes);
 app.use('/api/search', searchRoutes);

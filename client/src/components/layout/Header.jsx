@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SaveItemModal from '../save/SaveItemModal';
-import './Header.css';
+import './Header.scss';
 
 export default function Header({ title, subtitle }) {
   const [showSave, setShowSave] = useState(false);
@@ -9,23 +9,19 @@ export default function Header({ title, subtitle }) {
 
   return (
     <>
-      <header className="header">
-        <div className="header-left">
-          {title && (
-            <div>
-              <h1 className="header-title">{title}</h1>
-              {subtitle && <p className="header-subtitle">{subtitle}</p>}
-            </div>
-          )}
+      <header className="page-header">
+        <div className="page-header__left">
+          {title    && <h1 className="page-header__title">{title}</h1>}
+          {subtitle && <p  className="page-header__sub">{subtitle}</p>}
         </div>
-        <div className="header-right">
-          <button className="search-shortcut" onClick={() => navigate('/search')}>
-            <span>⌕</span>
+        <div className="page-header__right">
+          <button className="header-btn" onClick={() => navigate('/search')}>
+            <i className="ri-search-line" />
             <span>Search</span>
             <kbd>⌘K</kbd>
           </button>
-          <button className="save-btn" onClick={() => setShowSave(true)}>
-            <span>+</span>
+          <button className="header-btn-primary" onClick={() => setShowSave(true)}>
+            <i className="ri-add-line" />
             <span>Save</span>
           </button>
         </div>

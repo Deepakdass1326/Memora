@@ -1,36 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import './SaveItemModal.scss';
+import React, { useState, useEffect } from 'react';
 import { useItems } from '../../context/ItemsContext';
 import api from '../../services/api';
-import './SaveItemModal.css';
 
 const TYPES = [
-  { value: 'article', label: 'Article', icon: '📄' },
-  { value: 'video', label: 'Video', icon: '▶️' },
-  { value: 'tweet', label: 'Tweet', icon: '𝕏' },
-  { value: 'image', label: 'Image', icon: '🖼️' },
-  { value: 'pdf', label: 'PDF', icon: '📕' },
-  { value: 'note', label: 'Note', icon: '📝' },
-  { value: 'link', label: 'Link', icon: '🔗' },
+  { value:'article', label:'Article', icon:'ri-article-line' },
+  { value:'video',   label:'Video',   icon:'ri-play-circle-line' },
+  { value:'tweet',   label:'Tweet',   icon:'ri-twitter-x-line' },
+  { value:'image',   label:'Image',   icon:'ri-image-line' },
+  { value:'pdf',     label:'PDF',     icon:'ri-file-pdf-line' },
+  { value:'note',    label:'Note',    icon:'ri-sticky-note-line' },
+  { value:'link',    label:'Link',    icon:'ri-link' },
 ];
 
 export default function SaveItemModal({ onClose }) {
   const { createItem } = useItems();
-  const [form, setForm] = useState({ title: '', url: '', description: '', type: 'article', tags: '', content: '' });
+  const [form, setForm] = useState({ title:'', url:'', description:'', type:'article', tags:'', content:'' });
   const [collections, setCollections] = useState([]);
-  const [selectedCollections, setSelectedCollections] = useState([]);
+  const [selectedCols, setSelectedCols] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1 = basic, 2 = details
-  const inputRef = useRef(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
     api.get('/collections').then(r => setCollections(r.data.data)).catch(() => {});
-    // Check clipboard for URL
     if (navigator.clipboard?.readText) {
-      navigator.clipboard.readText().then(text => {
-        if (text.startsWith('http')) setForm(f => ({ ...f, url: text }));
-      }).catch(() => {});
+      navigator.clipboard.readText().then(text => { if (text.startsWith('http')) setForm(f => ({ ...f, url: text })); }).catch(() => {});
     }
   }, []);
 
@@ -46,125 +40,73 @@ export default function SaveItemModal({ onClose }) {
     setLoading(true);
     try {
       const tags = form.tags.split(',').map(t => t.trim()).filter(Boolean);
-      const result = await createItem({ ...form, tags, collections: selectedCollections });
-      if (result.suggestedTags) setSuggestedTags(result.suggestedTags);
+      const result = await createItem({ ...form, tags, collections: selectedCols });
+      if (result?.suggestedTags) setSuggestedTags(result.suggestedTags);
       onClose();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const addSuggestedTag = (tag) => {
+  const addTag = (tag) => {
     const existing = form.tags.split(',').map(t => t.trim()).filter(Boolean);
-    if (!existing.includes(tag)) {
-      setForm(f => ({ ...f, tags: [...existing, tag].join(', ') }));
-    }
+    if (!existing.includes(tag)) setForm(f => ({ ...f, tags: [...existing, tag].join(', ') }));
   };
+
+  const toggleCol = (id) => setSelectedCols(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal animate-scale">
+      <div className="modal-box animate-scale">
+
         {/* Header */}
         <div className="modal-header">
-          <h2 className="modal-title">Save to Memora</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <div className="modal-logo">
+            <div className="mark">◈</div>
+            <span>Save to Memora</span>
+          </div>
+          <button className="modal-close" onClick={onClose}><i className="ri-close-line" /></button>
+        </div>
+
+        {/* Type selector */}
+        <div className="modal-type-row">
+          {TYPES.map(t => (
+            <button key={t.value} type="button" className={`type-btn ${form.type === t.value ? 'active' : ''}`} onClick={() => setForm(f => ({ ...f, type: t.value }))}>
+              <i className={t.icon} style={{ fontSize: 13 }} />{t.label}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Type Selector */}
-          <div className="type-selector">
-            {TYPES.map(t => (
-              <button
-                key={t.value}
-                type="button"
-                className={`type-option ${form.type === t.value ? 'active' : ''}`}
-                onClick={() => setForm(f => ({ ...f, type: t.value }))}
-              >
-                <span>{t.icon}</span>
-                <span>{t.label}</span>
-              </button>
-            ))}
-          </div>
-
           <div className="modal-body">
-            {/* Title */}
-            <div className="form-group">
-              <label className="form-label">Title *</label>
-              <input
-                ref={inputRef}
-                type="text"
-                className="form-input"
-                placeholder="What is this about?"
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                required
-              />
+            <div>
+              <label className="modal-label">Title *</label>
+              <input className="modal-input" placeholder="What is this about?" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required autoFocus />
             </div>
-
-            {/* URL */}
-            <div className="form-group">
-              <label className="form-label">URL</label>
-              <input
-                type="url"
-                className="form-input"
-                placeholder="https://..."
-                value={form.url}
-                onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-              />
+            <div>
+              <label className="modal-label">URL</label>
+              <input className="modal-input" type="url" placeholder="https://…" value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} />
             </div>
-
-            {/* Description */}
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea
-                className="form-input form-textarea"
-                placeholder="Brief notes or summary..."
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                rows={3}
-              />
+            <div>
+              <label className="modal-label">Notes</label>
+              <textarea className="modal-input modal-input--ta" placeholder="Brief notes or summary…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} />
             </div>
-
-            {/* Tags */}
-            <div className="form-group">
-              <label className="form-label">Tags</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="ai, research, design (comma-separated)"
-                value={form.tags}
-                onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
-              />
+            <div>
+              <label className="modal-label">Tags</label>
+              <input className="modal-input" placeholder="ai, design, research (comma-separated)" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
               {suggestedTags.length > 0 && (
-                <div className="suggested-tags">
-                  <span className="suggested-label">✦ AI suggested:</span>
-                  {suggestedTags.map(tag => (
-                    <button key={tag} type="button" className="tag-pill" onClick={() => addSuggestedTag(tag)}>
-                      + {tag}
-                    </button>
-                  ))}
+                <div className="suggested-tags" style={{ marginTop: 8 }}>
+                  <span className="label">✦ AI suggested:</span>
+                  {suggestedTags.map(t => <button key={t} type="button" className="tag-pill" onClick={() => addTag(t)} style={{ cursor: 'pointer' }}>+ {t}</button>)}
                 </div>
               )}
             </div>
-
-            {/* Collections */}
             {collections.length > 0 && (
-              <div className="form-group">
-                <label className="form-label">Add to Collection</label>
-                <div className="collection-select">
+              <div>
+                <label className="modal-label">Collection</label>
+                <div className="collection-chips">
                   {collections.map(col => (
-                    <button
-                      key={col._id}
-                      type="button"
-                      className={`collection-chip ${selectedCollections.includes(col._id) ? 'active' : ''}`}
-                      onClick={() => setSelectedCollections(prev =>
-                        prev.includes(col._id) ? prev.filter(c => c !== col._id) : [...prev, col._id]
-                      )}
-                    >
-                      <span>{col.emoji}</span>
-                      <span>{col.name}</span>
+                    <button key={col._id} type="button" className={`collection-chip ${selectedCols.includes(col._id) ? 'active' : ''}`} onClick={() => toggleCol(col._id)}>
+                      <span>{col.emoji}</span><span>{col.name}</span>
                     </button>
                   ))}
                 </div>
@@ -175,7 +117,7 @@ export default function SaveItemModal({ onClose }) {
           <div className="modal-footer">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={loading || !form.title}>
-              {loading ? <span className="loading-dots">Saving</span> : '✦ Save to Memora'}
+              {loading ? <><i className="ri-loader-4-line spin" />Saving…</> : <><i className="ri-bookmark-line" />Save to Memora</>}
             </button>
           </div>
         </form>

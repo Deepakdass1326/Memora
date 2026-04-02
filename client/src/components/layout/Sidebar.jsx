@@ -1,130 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
-import { generateAvatarUrl } from '../../utils/helpers';
-import './Sidebar.css';
+import { useTheme } from '../../context/ThemeContext';
+import './Sidebar.scss';
 
-const NAV_ITEMS = [
-  { to: '/', icon: '◈', label: 'Dashboard', exact: true },
-  { to: '/library', icon: '⊞', label: 'Library' },
-  { to: '/graph', icon: '⬡', label: 'Knowledge Graph' },
-  { to: '/search', icon: '⌕', label: 'Search' },
-  { to: '/resurface', icon: '◎', label: 'Memory' },
+const NAV = [
+  { to: '/',          icon: 'ri-dashboard-line',    label: 'Dashboard'        },
+  { to: '/library',   icon: 'ri-book-shelf-line',   label: 'Library'          },
+  { to: '/graph',     icon: 'ri-node-tree',          label: 'Knowledge Graph'  },
+  { to: '/search',    icon: 'ri-search-line',        label: 'Search'           },
+  { to: '/resurface', icon: 'ri-history-line',       label: 'Memory'           },
 ];
 
-const TYPE_FILTERS = [
-  { type: 'article', icon: '📄', label: 'Articles' },
-  { type: 'video', icon: '▶', label: 'Videos' },
-  { type: 'tweet', icon: '𝕏', label: 'Tweets' },
-  { type: 'image', icon: '⬚', label: 'Images' },
-  { type: 'pdf', icon: '▣', label: 'PDFs' },
-  { type: 'note', icon: '◻', label: 'Notes' },
+const TYPES = [
+  { label: 'Articles', icon: 'ri-article-line',     to: '/library?type=article' },
+  { label: 'Videos',   icon: 'ri-play-circle-line', to: '/library?type=video'   },
+  { label: 'Tweets',   icon: 'ri-twitter-x-line',   to: '/library?type=tweet'   },
+  { label: 'Images',   icon: 'ri-image-line',        to: '/library?type=image'   },
+  { label: 'PDFs',     icon: 'ri-file-pdf-line',     to: '/library?type=pdf'     },
+  { label: 'Notes',    icon: 'ri-sticky-note-line',  to: '/library?type=note'    },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, setCollapsed }) {
   const { user, logout } = useAuth();
-  const location = useLocation();
-  const [collections, setCollections] = useState([]);
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    api.get('/collections').then(r => setCollections(r.data.data)).catch(() => {});
-  }, []);
+  const { theme, toggleTheme } = useTheme();
+  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'M';
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="logo-mark">M</div>
-        {!collapsed && <span className="logo-text">memora</span>}
-        <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)} title="Toggle sidebar">
-          {collapsed ? '→' : '←'}
+        <div className="sidebar-logo__mark">◈</div>
+        {!collapsed && <span className="sidebar-logo__name">memora</span>}
+        <button className={`sidebar-logo__toggle${collapsed ? ' rotated' : ''}`} onClick={() => setCollapsed(c => !c)} title={collapsed ? 'Expand' : 'Collapse'}>
+          <i className="ri-sidebar-fold-line" />
         </button>
       </div>
 
-      {/* Main Nav */}
+      {/* Nav */}
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(item => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.exact}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            title={collapsed ? item.label : ''}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            {!collapsed && <span className="nav-label">{item.label}</span>}
+        {NAV.map(item => (
+          <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `sidebar-nav-item${isActive ? ' active' : ''}`}>
+            <i className={item.icon} />
+            {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}
-      </nav>
 
-      <div className="sidebar-divider" />
-
-      {/* Type filters */}
-      {!collapsed && (
-        <div className="sidebar-section">
-          <p className="section-title">Types</p>
-          {TYPE_FILTERS.map(f => (
-            <NavLink
-              key={f.type}
-              to={`/library?type=${f.type}`}
-              className={({ isActive }) =>
-                `nav-item type-item ${location.search.includes(f.type) ? 'active' : ''}`
-              }
-            >
-              <span className="nav-icon type-icon">{f.icon}</span>
-              <span className="nav-label">{f.label}</span>
-            </NavLink>
-          ))}
-        </div>
-      )}
-
-      <div className="sidebar-divider" />
-
-      {/* Collections */}
-      {!collapsed && collections.length > 0 && (
-        <div className="sidebar-section sidebar-collections">
-          <div className="section-header">
-            <p className="section-title">Collections</p>
-            <NavLink to="/collections" className="section-action">All</NavLink>
-          </div>
-          <div className="collections-list">
-            {collections.slice(0, 6).map(col => (
-              <NavLink
-                key={col._id}
-                to={`/library?collection=${col._id}`}
-                className="collection-item"
-              >
-                <span style={{ color: col.color }}>{col.emoji}</span>
-                <span className="collection-name truncate">{col.name}</span>
-                <span className="collection-count">{col.itemCount}</span>
+        {!collapsed && (
+          <>
+            <div className="sidebar-divider" />
+            <p className="sidebar-section-label">Types</p>
+            {TYPES.map(t => (
+              <NavLink key={t.to} to={t.to} className={({ isActive }) => `sidebar-type-item${isActive ? ' active' : ''}`}>
+                <i className={t.icon} />
+                <span>{t.label}</span>
               </NavLink>
             ))}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </nav>
 
       {/* Footer */}
       <div className="sidebar-footer">
-        {user && (
-          <div className="user-section">
-            <img
-              src={user.avatar || generateAvatarUrl(user.name)}
-              alt={user.name}
-              className="user-avatar"
-            />
-            {!collapsed && (
-              <div className="user-info">
-                <p className="user-name truncate">{user.name}</p>
-                <p className="user-email truncate">{user.email}</p>
+        {/* Theme toggle */}
+        <div className={`sidebar-theme-row${collapsed ? ' centered' : ''}`}>
+          <i className={theme === 'dark' ? 'ri-moon-line' : 'ri-sun-line'} />
+          {!collapsed && (
+            <>
+              <span className="sidebar-theme-row__label">{theme === 'dark' ? 'Dark' : 'Light'}</span>
+              <button className={`theme-toggle-btn${theme === 'dark' ? ' on' : ''}`} onClick={toggleTheme} aria-label="Toggle theme">
+                <span className={theme === 'dark' ? 'on' : ''} />
+              </button>
+            </>
+          )}
+          {collapsed && <button className="icon-btn" onClick={toggleTheme}><i className="ri-contrast-2-line" /></button>}
+        </div>
+
+        {/* User */}
+        <div className={`sidebar-user${collapsed ? ' centered' : ''}`} title={user?.name}>
+          <div className="sidebar-user__avatar">{initials}</div>
+          {!collapsed && (
+            <>
+              <div className="sidebar-user__info">
+                <p className="sidebar-user__name">{user?.name}</p>
+                <p className="sidebar-user__email">{user?.email}</p>
               </div>
-            )}
-            {!collapsed && (
-              <button className="logout-btn" onClick={logout} title="Logout">⎋</button>
-            )}
-          </div>
-        )}
+              <button className="sidebar-user__logout" onClick={logout} title="Sign out"><i className="ri-logout-box-r-line" /></button>
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );

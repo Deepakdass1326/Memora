@@ -1,13 +1,12 @@
 import React from 'react';
 import Header from '../components/layout/Header';
 import KnowledgeGraph from '../components/graph/KnowledgeGraph';
-import './GraphPage.css';
 
 export default function GraphPage() {
   return (
-    <div className="main-content">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header title="Knowledge Graph" subtitle="See how your ideas connect" />
-      <div className="page-content graph-page-content">
+      <div className="graph-wrap">
         <KnowledgeGraph />
       </div>
     </div>

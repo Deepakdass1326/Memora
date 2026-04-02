@@ -1,90 +1,152 @@
+const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
+const { JsonOutputParser } = require('@langchain/core/output_parsers');
+const { ChatPromptTemplate } = require('@langchain/core/prompts');
+
 /**
  * AI Tagging Service
- * In production: integrate OpenAI/Claude embeddings for semantic tagging
- * Here: rule-based smart tagging + topic clustering
+ * Phase 1: LangChain + Gemini (gemini-2.5-flash) for real semantic tagging
+ * Fallback: Rule-based keyword analysis if GEMINI_API_KEY is not set
  */
+
+// ─── Rule-based Fallback ───────────────────────────────────────────────────
 
 const TOPIC_CLUSTERS = {
-  technology: ['tech', 'software', 'ai', 'machine learning', 'programming', 'code', 'developer', 'javascript', 'python', 'react', 'api', 'web', 'app', 'startup', 'saas'],
-  design: ['design', 'ux', 'ui', 'figma', 'typography', 'color', 'layout', 'css', 'animation', 'branding', 'logo'],
-  science: ['science', 'research', 'study', 'data', 'biology', 'physics', 'chemistry', 'quantum', 'climate', 'space'],
-  business: ['business', 'startup', 'entrepreneur', 'marketing', 'sales', 'revenue', 'growth', 'strategy', 'product', 'finance'],
-  health: ['health', 'fitness', 'nutrition', 'mental', 'wellness', 'meditation', 'exercise', 'sleep', 'diet'],
-  philosophy: ['philosophy', 'ethics', 'stoic', 'mindset', 'psychology', 'cognitive', 'behavior', 'thinking'],
-  culture: ['culture', 'art', 'music', 'film', 'book', 'literature', 'history', 'society', 'politics'],
-  productivity: ['productivity', 'habit', 'workflow', 'tools', 'focus', 'time', 'management', 'system', 'note'],
+  technology: ['tech', 'software', 'ai', 'machine learning', 'programming', 'code', 'developer', 'javascript', 'python', 'react', 'api', 'web', 'app', 'startup', 'saas', 'llm', 'neural', 'algorithm'],
+  design: ['design', 'ux', 'ui', 'figma', 'typography', 'color', 'layout', 'css', 'animation', 'branding', 'logo', 'visual', 'graphic'],
+  science: ['science', 'research', 'study', 'data', 'biology', 'physics', 'chemistry', 'quantum', 'climate', 'space', 'astronomy', 'genome'],
+  business: ['business', 'startup', 'entrepreneur', 'marketing', 'sales', 'revenue', 'growth', 'strategy', 'product', 'finance', 'investment', 'venture'],
+  health: ['health', 'fitness', 'nutrition', 'mental', 'wellness', 'meditation', 'exercise', 'sleep', 'diet', 'therapy', 'medicine'],
+  philosophy: ['philosophy', 'ethics', 'stoic', 'mindset', 'psychology', 'cognitive', 'behavior', 'thinking', 'consciousness', 'moral'],
+  culture: ['culture', 'art', 'music', 'film', 'book', 'literature', 'history', 'society', 'politics', 'movie', 'podcast'],
+  productivity: ['productivity', 'habit', 'workflow', 'tools', 'focus', 'time', 'management', 'system', 'note', 'planning', 'organization'],
 };
 
-/**
- * Extract keywords from text using basic NLP
- */
-const extractKeywords = (text) => {
+const STOP_WORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of',
+  'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'have',
+  'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+  'may', 'might', 'this', 'that', 'these', 'those', 'it', 'its', 'as', 'if',
+  'then', 'than', 'so', 'yet', 'both', 'either', 'not', 'also', 'just', 'about',
+  'more', 'your', 'our', 'their', 'you', 'they', 'we', 'he', 'she', 'what',
+  'when', 'where', 'how', 'which', 'who', 'can', 'all', 'new', 'use', 'used',
+]);
+
+const extractKeywordsRuleBased = (text) => {
   if (!text) return [];
-  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'this', 'that', 'these', 'those', 'it', 'its', 'as', 'if', 'then', 'than', 'so', 'yet', 'both', 'either']);
-  
   const words = text.toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter(w => w.length > 3 && !stopWords.has(w));
-
-  // Frequency count
+    .filter(w => w.length > 3 && !STOP_WORDS.has(w));
   const freq = {};
   words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
-  
   return Object.entries(freq)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
     .map(([word]) => word);
 };
 
-/**
- * Determine topic cluster from tags/keywords
- */
-const detectTopicCluster = (tags, title = '', description = '') => {
+const detectTopicClusterRuleBased = (tags, title = '', description = '') => {
   const allText = [...tags, ...title.toLowerCase().split(' '), ...description.toLowerCase().split(' ')].join(' ');
-  
   const scores = {};
   Object.entries(TOPIC_CLUSTERS).forEach(([topic, keywords]) => {
     scores[topic] = keywords.filter(kw => allText.includes(kw)).length;
   });
-  
   const top = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
   return top && top[1] > 0 ? top[0] : 'general';
 };
 
-/**
- * Generate tag suggestions for an item
- */
-const generateTags = (item) => {
+const generateTagsRuleBased = (item) => {
   const { title = '', description = '', content = '', type, source } = item;
   const combinedText = `${title} ${description} ${content}`;
-  
-  const keywordTags = extractKeywords(combinedText);
-  
-  // Type-based tags
+  const keywordTags = extractKeywordsRuleBased(combinedText);
   const typeTags = {
-    article: ['reading', 'article'],
-    tweet: ['twitter', 'social'],
-    image: ['visual', 'inspiration'],
-    video: ['video', 'watch-later'],
-    pdf: ['document', 'reference'],
-    note: ['note', 'personal'],
-    link: ['link'],
+    article: ['reading', 'article'], tweet: ['twitter', 'social'],
+    image: ['visual', 'inspiration'], video: ['video', 'watch-later'],
+    pdf: ['document', 'reference'], note: ['note', 'personal'], link: ['link'],
   };
-
   const sourceTags = source ? [source.replace(/^www\./, '').split('.')[0]] : [];
-  
-  const allTags = [...new Set([
-    ...(typeTags[type] || []),
-    ...sourceTags,
-    ...keywordTags.slice(0, 5),
-  ])].slice(0, 8);
+  return [...new Set([...(typeTags[type] || []), ...sourceTags, ...keywordTags.slice(0, 5)])].slice(0, 8);
+};
 
-  return allTags;
+// ─── Gemini / LangChain AI Tagging ────────────────────────────────────────
+
+let geminiChain = null;
+
+const initGeminiChain = () => {
+  if (!process.env.GEMINI_API_KEY) return null;
+  if (geminiChain) return geminiChain;
+
+  try {
+    const model = new ChatGoogleGenerativeAI({
+      model: 'gemini-2.5-flash',
+      apiKey: process.env.GEMINI_API_KEY,
+      temperature: 0.2,
+      maxOutputTokens: 256,
+    });
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      ['system', `You are a knowledge organization assistant. Analyze the given content and return ONLY a JSON object with exactly these two keys:
+- "tags": an array of 5-8 lowercase single-word or short-phrase tags that best describe the content (e.g. ["machine-learning", "python", "tutorial"])
+- "topicCluster": exactly ONE string from this list: technology, design, science, business, health, philosophy, culture, productivity, general
+
+Respond ONLY with valid JSON. No markdown, no explanation.`],
+      ['human', `Title: {title}
+Description: {description}
+Content snippet: {content}
+Type: {type}`],
+    ]);
+
+    const parser = new JsonOutputParser();
+    geminiChain = prompt.pipe(model).pipe(parser);
+    return geminiChain;
+  } catch (err) {
+    console.warn('[AI Tagging] Failed to init Gemini chain:', err.message);
+    return null;
+  }
+};
+
+// ─── Public API ────────────────────────────────────────────────────────────
+
+/**
+ * Generate tags and detect topic cluster using Gemini AI (with rule-based fallback).
+ * @returns {{ tags: string[], topicCluster: string }}
+ */
+const generateTags = async (item) => {
+  const chain = initGeminiChain();
+
+  if (chain) {
+    try {
+      const result = await chain.invoke({
+        title: item.title || '',
+        description: (item.description || '').slice(0, 500),
+        content: (item.content || '').slice(0, 1500),
+        type: item.type || 'link',
+      });
+
+      const tags = Array.isArray(result.tags)
+        ? result.tags.map(t => String(t).toLowerCase().trim()).filter(Boolean).slice(0, 8)
+        : generateTagsRuleBased(item);
+
+      const validClusters = Object.keys(TOPIC_CLUSTERS).concat(['general']);
+      const topicCluster = validClusters.includes(result.topicCluster)
+        ? result.topicCluster
+        : detectTopicClusterRuleBased(tags, item.title, item.description);
+
+      console.log('[AI Tagging] Gemini tags generated:', tags, '| Cluster:', topicCluster);
+      return { tags, topicCluster };
+    } catch (err) {
+      console.warn('[AI Tagging] Gemini call failed, falling back to rule-based:', err.message);
+    }
+  }
+
+  // Rule-based fallback
+  const tags = generateTagsRuleBased(item);
+  const topicCluster = detectTopicClusterRuleBased(tags, item.title, item.description);
+  return { tags, topicCluster };
 };
 
 /**
- * Find related items based on shared tags and topic cluster
+ * Find related items based on shared tags and topic cluster.
  */
 const findRelatedItems = async (item, allUserItems) => {
   const related = allUserItems
@@ -99,8 +161,12 @@ const findRelatedItems = async (item, allUserItems) => {
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
     .map(r => r.item._id);
-
   return related;
 };
 
-module.exports = { generateTags, detectTopicCluster, findRelatedItems, extractKeywords };
+module.exports = {
+  generateTags,
+  findRelatedItems,
+  detectTopicCluster: detectTopicClusterRuleBased,
+  extractKeywords: extractKeywordsRuleBased,
+};

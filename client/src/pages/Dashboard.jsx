@@ -5,22 +5,20 @@ import ItemCard from '../components/dashboard/ItemCard';
 import { useItems } from '../context/ItemsContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { formatDate, getTypeIcon, getClusterColor } from '../utils/helpers';
-import './Dashboard.css';
+import './Dashboard.scss';
 
-const STAT_TYPES = ['article', 'video', 'tweet', 'image', 'pdf', 'note'];
+const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line' };
+const STAT_TYPES = ['article','video','tweet','image','pdf','note'];
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { items, fetchItems, loading } = useItems();
-  const [resurface, setResurface] = useState([]);
   const [tags, setTags] = useState([]);
   const [stats, setStats] = useState({});
 
   useEffect(() => {
     fetchItems({ limit: 8 });
-    api.get('/resurface').then(r => setResurface(r.data.data)).catch(() => {});
-    api.get('/tags').then(r => setTags(r.data.data.slice(0, 12))).catch(() => {});
+    api.get('/tags').then(r => setTags(r.data.data.slice(0, 14))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -35,120 +33,77 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="main-content">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
-      <div className="page-content">
+      <div className="page-inner">
 
-        {/* Hero greeting */}
+        {/* Hero */}
         <div className="dashboard-hero">
-          <div className="hero-text">
-            <h1 className="display-md">{greeting},</h1>
-            <h1 className="display-md accent-text">{user?.name?.split(' ')[0]}.</h1>
-            <p className="hero-sub">
-              You have <strong>{user?.stats?.totalItems || items.length}</strong> things saved.
-              Your second brain is growing.
+          <div>
+            <p className="dashboard-hero__greeting">{greeting} 👋</p>
+            <h1 className="dashboard-hero__name">
+              {user?.name?.split(' ')[0]}<span className="accent">.</span>
+            </h1>
+            <p className="dashboard-hero__sub">
+              You have <strong>{user?.stats?.totalItems || items.length}</strong> things saved. Your second brain is growing.
             </p>
           </div>
-          <div className="hero-stats">
+          <div className="dashboard-hero__stats">
             {STAT_TYPES.filter(t => stats[t]).map(type => (
-              <div key={type} className="hero-stat">
-                <span className="stat-icon">{getTypeIcon(type)}</span>
-                <span className="stat-count">{stats[type]}</span>
-                <span className="stat-label">{type}s</span>
+              <div key={type} className="stat-chip">
+                <i className={TYPE_ICONS[type]} />
+                <span className="stat-chip__num">{stats[type]}</span>
+                <span className="stat-chip__label">{type}s</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Memory Resurface */}
-        {resurface.length > 0 && (
-          <section className="dashboard-section">
-            <div className="section-header-row">
-              <div>
-                <h2 className="section-title-large">◎ From Your Memory</h2>
-                <p className="section-desc">Things worth revisiting</p>
-              </div>
-              <Link to="/resurface" className="see-all-link">See all →</Link>
-            </div>
-            <div className="resurface-grid">
-              {resurface.slice(0, 2).map(group => (
-                <div key={group.label} className="resurface-card">
-                  <div className="resurface-header">
-                    <span className="resurface-label">{group.label}</span>
-                    {group.daysAgo && <span className="resurface-days">{group.daysAgo}d ago</span>}
-                  </div>
-                  <div className="resurface-items">
-                    {group.items.map(item => (
-                      <Link key={item._id} to={`/library`} className="resurface-item">
-                        <span className="ri-icon">{getTypeIcon(item.type)}</span>
-                        <div className="ri-content">
-                          <p className="ri-title line-clamp-1">{item.title}</p>
-                          <div className="ri-tags">
-                            {item.tags?.slice(0, 2).map(t => (
-                              <span key={t} className="tag-pill" style={{ fontSize: '0.65rem' }}>{t}</span>
-                            ))}
-                          </div>
-                        </div>
-                        {item.topicCluster && (
-                          <span className="ri-cluster" style={{ background: `${getClusterColor(item.topicCluster)}20`, color: getClusterColor(item.topicCluster) }}>
-                            {item.topicCluster}
-                          </span>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Recent Items */}
-        <section className="dashboard-section">
-          <div className="section-header-row">
+        {/* Recently Saved */}
+        <section style={{ marginBottom: 40 }}>
+          <div className="section-header">
             <div>
-              <h2 className="section-title-large">Recently Saved</h2>
-              <p className="section-desc">Your latest additions</p>
+              <h2 className="section-header__title">Recently Saved</h2>
+              <p className="section-header__sub">Your latest additions</p>
             </div>
-            <Link to="/library" className="see-all-link">Library →</Link>
+            <Link to="/library" className="section-header__link">Library →</Link>
           </div>
+
           {loading ? (
             <div className="items-grid">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="item-card-skeleton">
-                  <div className="skeleton" style={{ height: 140, borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0' }} />
-                  <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div className="skeleton" style={{ height: 12, width: '40%' }} />
-                    <div className="skeleton" style={{ height: 16, width: '90%' }} />
-                    <div className="skeleton" style={{ height: 12, width: '70%' }} />
+                <div key={i} style={{ borderRadius: 14, overflow: 'hidden', background: 'var(--card)', border: '1px solid var(--border)' }}>
+                  <div className="skeleton" style={{ height: 140 }} />
+                  <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="skeleton" style={{ height: 10, width: '40%' }} />
+                    <div className="skeleton" style={{ height: 15, width: '80%' }} />
+                    <div className="skeleton" style={{ height: 10, width: '60%' }} />
                   </div>
                 </div>
               ))}
             </div>
           ) : items.length === 0 ? (
             <div className="empty-state">
-              <div className="icon">◈</div>
+              <div className="icon"><i className="ri-inbox-archive-line" /></div>
               <h3>Nothing saved yet</h3>
-              <p>Click "Save" in the top right to add your first article, video, or link.</p>
+              <p>Click "Save" to add your first article, video, or link.</p>
             </div>
           ) : (
             <div className="items-grid">
-              {items.slice(0, 8).map(item => (
-                <ItemCard key={item._id} item={item} />
-              ))}
+              {items.slice(0, 8).map(item => <ItemCard key={item._id} item={item} />)}
             </div>
           )}
         </section>
 
-        {/* Top Tags */}
+        {/* Tags */}
         {tags.length > 0 && (
-          <section className="dashboard-section">
-            <h2 className="section-title-large">Your Tags</h2>
-            <div className="tags-cloud">
+          <section style={{ marginBottom: 40 }}>
+            <h2 className="section-header__title" style={{ marginBottom: 16 }}>Your Tags</h2>
+            <div className="tag-cloud">
               {tags.map(({ tag, count }) => (
-                <Link key={tag} to={`/library?tag=${tag}`} className="tag-cloud-pill">
+                <Link key={tag} to={`/library?tag=${tag}`} className="tag-cloud-item">
                   <span>{tag}</span>
-                  <span className="tag-count">{count}</span>
+                  <span className="count">{count}</span>
                 </Link>
               ))}
             </div>
@@ -156,32 +111,22 @@ export default function Dashboard() {
         )}
 
         {/* Quick links */}
-        <section className="dashboard-section">
+        <section>
           <div className="quick-links">
-            <Link to="/graph" className="quick-link-card">
-              <span className="ql-icon">⬡</span>
-              <div>
-                <p className="ql-title">Knowledge Graph</p>
-                <p className="ql-desc">Visualize connections between your saved items</p>
-              </div>
-              <span className="ql-arrow">→</span>
-            </Link>
-            <Link to="/search" className="quick-link-card">
-              <span className="ql-icon">⌕</span>
-              <div>
-                <p className="ql-title">Semantic Search</p>
-                <p className="ql-desc">Find anything in your library by meaning</p>
-              </div>
-              <span className="ql-arrow">→</span>
-            </Link>
-            <Link to="/resurface" className="quick-link-card">
-              <span className="ql-icon">◎</span>
-              <div>
-                <p className="ql-title">Memory Resurface</p>
-                <p className="ql-desc">Rediscover forgotten gems from months ago</p>
-              </div>
-              <span className="ql-arrow">→</span>
-            </Link>
+            {[
+              { to: '/graph',     icon: 'ri-node-tree',     title: 'Knowledge Graph',  desc: 'Visualize connections between ideas' },
+              { to: '/search',    icon: 'ri-search-2-line', title: 'Semantic Search',  desc: 'Find anything in your library' },
+              { to: '/resurface', icon: 'ri-history-line',  title: 'Memory Resurface', desc: 'Rediscover forgotten gems from your past' },
+            ].map(item => (
+              <Link key={item.to} to={item.to} className="quick-link-item">
+                <div className="icon-wrap"><i className={item.icon} /></div>
+                <div className="quick-link-item__info">
+                  <p className="quick-link-item__title">{item.title}</p>
+                  <p className="quick-link-item__desc">{item.desc}</p>
+                </div>
+                <i className="ri-arrow-right-line arrow" />
+              </Link>
+            ))}
           </div>
         </section>
 

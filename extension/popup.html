@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memora</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup-shell">
+
+    <!-- Header -->
+    <div class="popup-header">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">memora</span>
+      </div>
+      <div id="auth-status" class="auth-status"></div>
+    </div>
+
+    <!-- Not Logged In View -->
+    <div id="not-logged-in" class="view hidden">
+      <div class="empty-illustration">🔐</div>
+      <p class="empty-title">Not connected</p>
+      <p class="empty-sub">Open the Memora web app and log in first.</p>
+      <a href="http://localhost:5173" target="_blank" class="btn-primary btn-block">Open Memora ↗</a>
+    </div>
+
+    <!-- Logged In / Save View -->
+    <div id="save-view" class="view hidden">
+      <!-- Page Preview -->
+      <div class="page-preview" id="page-preview">
+        <div class="preview-favicon" id="preview-favicon"></div>
+        <div class="preview-info">
+          <p class="preview-title" id="preview-title">Loading page…</p>
+          <p class="preview-url" id="preview-url"></p>
+        </div>
+      </div>
+
+      <!-- Type Selector -->
+      <div class="type-row">
+        <button class="type-btn active" data-type="article">📄 Article</button>
+        <button class="type-btn" data-type="video">▶️ Video</button>
+        <button class="type-btn" data-type="tweet">𝕏 Tweet</button>
+        <button class="type-btn" data-type="image">🖼️ Image</button>
+        <button class="type-btn" data-type="link">🔗 Link</button>
+      </div>
+
+      <!-- Note -->
+      <div class="form-group">
+        <label class="form-label">Note (optional)</label>
+        <textarea id="note-input" class="form-textarea" placeholder="What do you want to remember about this?"></textarea>
+      </div>
+
+      <!-- Tags -->
+      <div class="form-group">
+        <label class="form-label">Tags (optional)</label>
+        <input id="tags-input" class="form-input" type="text" placeholder="e.g. design, ai, tools" />
+      </div>
+
+      <!-- Save Button -->
+      <button id="save-btn" class="btn-primary btn-block">
+        <span id="save-btn-text">✦ Save to Memora</span>
+      </button>
+    </div>
+
+    <!-- Success View -->
+    <div id="success-view" class="view hidden">
+      <div class="success-check">✓</div>
+      <p class="success-title">Saved!</p>
+      <p class="success-sub">Your item has been added to Memora and will be tagged automatically.</p>
+      <a href="http://localhost:5173" target="_blank" class="btn-ghost btn-block">View in Memora ↗</a>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="error-toast" class="error-toast hidden"></div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

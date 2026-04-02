@@ -54,6 +54,21 @@ const getResurfaceItems = async (req, res) => {
       );
     }
 
+    // Fallback: if nothing resurfaced yet, show recently added items so the page isn't empty
+    if (resurfaces.length === 0) {
+      const recent = await Item.find({
+        user: req.user._id,
+        isArchived: false,
+      })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .select('title type thumbnail url tags createdAt topicCluster');
+
+      if (recent.length > 0) {
+        resurfaces.push({ label: '📚 Your Collection', daysAgo: null, items: recent });
+      }
+    }
+
     res.json({ success: true, data: resurfaces });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

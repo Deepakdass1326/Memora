@@ -1,0 +1,192 @@
+@use '../../styles/mixins' as m;
+
+// All sizing/positioning is in _layout.scss (.sidebar class)
+// This file contains sidebar-specific internal styles
+
+.sidebar {
+  // ── Logo area ──
+  .sidebar-logo {
+    @include m.flex(row, center, flex-start, 10px);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow: hidden;
+
+    &__mark {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--accent);
+      @include m.flex(row, center, center);
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    &__name {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1.15rem;
+      color: var(--foreground);
+      flex: 1;
+      white-space: nowrap;
+    }
+
+    &__toggle {
+      @include m.btn-reset;
+      color: var(--muted-fg);
+      font-size: 18px;
+      padding: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+      @include m.transition(color);
+      &:hover { color: var(--foreground); }
+      &.rotated { transform: rotate(180deg); }
+    }
+  }
+
+  // ── Nav ──
+  .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 8px;
+  }
+
+  .sidebar-nav-item {
+    @include m.flex(row, center, flex-start, 10px);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    text-decoration: none;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--muted-fg);
+    @include m.transition;
+    white-space: nowrap;
+    overflow: hidden;
+
+    i { font-size: 17px; flex-shrink: 0; }
+
+    &:hover       { background: var(--muted); color: var(--foreground); }
+    &.active      { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 4px;
+  }
+
+  .sidebar-section-label {
+    padding: 4px 12px 6px;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted-fg);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sidebar-type-item {
+    @include m.flex(row, center, flex-start, 10px);
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin-bottom: 1px;
+    text-decoration: none;
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--muted-fg);
+    @include m.transition;
+    white-space: nowrap;
+    overflow: hidden;
+
+    i  { font-size: 14px; flex-shrink: 0; }
+    &:hover { color: var(--foreground); background: var(--muted); }
+    &.active { color: var(--accent); }
+  }
+
+  // ── Footer ──
+  .sidebar-footer {
+    padding: 8px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebar-theme-row {
+    @include m.flex(row, center, flex-start, 10px);
+    padding: 8px 12px;
+    border-radius: 8px;
+    overflow: hidden;
+
+    &.centered { justify-content: center; }
+
+    i { font-size: 16px; color: var(--muted-fg); flex-shrink: 0; }
+
+    &__label { flex: 1; font-size: .8rem; color: var(--muted-fg); white-space: nowrap; }
+
+    .theme-toggle-btn {
+      @include m.btn-reset;
+      width: 36px; height: 20px;
+      border-radius: 10px;
+      background: var(--border);
+      position: relative;
+      @include m.transition(background);
+      flex-shrink: 0;
+
+      &.on { background: var(--accent); }
+
+      span {
+        position: absolute;
+        top: 2px; left: 2px;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        @include m.transition(left);
+        &.on { left: 18px; }
+      }
+    }
+
+    .icon-btn {
+      @include m.btn-reset;
+      color: var(--muted-fg);
+      font-size: 16px;
+      &:hover { color: var(--foreground); }
+    }
+  }
+
+  .sidebar-user {
+    @include m.flex(row, center, flex-start, 10px);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: default;
+    overflow: hidden;
+
+    &.centered { justify-content: center; }
+
+    &__avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      @include m.flex(row, center, center);
+      font-size: .7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    &__info { flex: 1; min-width: 0; }
+    &__name  { font-size: .8rem; font-weight: 500; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    &__email { font-size: .7rem; color: var(--muted-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    &__logout {
+      @include m.btn-reset;
+      color: var(--muted-fg);
+      font-size: 15px;
+      padding: 4px;
+      @include m.transition(color);
+      flex-shrink: 0;
+      &:hover { color: #ef4444; }
+    }
+  }
+}

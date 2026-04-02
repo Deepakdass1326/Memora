@@ -2,9 +2,16 @@ import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 
 export const formatDate = (date) => {
   const d = new Date(date);
-  if (isToday(d)) return 'Today';
-  if (isYesterday(d)) return 'Yesterday';
+  if (isToday(d)) return `Today at ${format(d, 'h:mm a')}`;
+  if (isYesterday(d)) return `Yesterday at ${format(d, 'h:mm a')}`;
   return format(d, 'MMM d, yyyy');
+};
+
+export const formatDateTime = (date) => {
+  const d = new Date(date);
+  if (isToday(d)) return `Today at ${format(d, 'h:mm a')}`;
+  if (isYesterday(d)) return `Yesterday at ${format(d, 'h:mm a')}`;
+  return format(d, 'MMM d, yyyy · h:mm a');
 };
 
 export const formatRelative = (date) => {

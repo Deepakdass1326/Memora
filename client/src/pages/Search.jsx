@@ -1,9 +1,11 @@
+import './Search.scss';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import api from '../services/api';
-import { getTypeIcon, getClusterColor, formatRelative } from '../utils/helpers';
-import './Search.css';
+import { formatRelative, getTypeColor, getClusterColor } from '../utils/helpers.jsx';
+
+const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line', link:'ri-link' };
 
 export default function Search() {
   const [query, setQuery] = useState('');
@@ -14,84 +16,66 @@ export default function Search() {
   const debounceRef = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
-
   useEffect(() => {
-    const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
+    const onKey = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); inputRef.current?.focus(); } };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   const doSearch = useCallback(async (q) => {
     if (!q.trim()) { setResults([]); setSearched(false); return; }
-    setLoading(true);
-    setSearched(true);
-    try {
-      const res = await api.get('/search', { params: { q } });
-      setResults(res.data.data);
-    } catch { setResults([]); }
+    setLoading(true); setSearched(true);
+    try { const res = await api.get('/search', { params: { q } }); setResults(res.data.data); }
+    catch { setResults([]); }
     finally { setLoading(false); }
   }, []);
 
   const handleChange = (e) => {
-    const val = e.target.value;
-    setQuery(val);
+    const val = e.target.value; setQuery(val);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(val), 350);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      clearTimeout(debounceRef.current);
-      doSearch(query);
-    }
+  const highlight = (text) => {
+    if (!text || !query) return text;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.split(regex).map((part, i) =>
+      regex.test(part) ? <mark key={i}>{part}</mark> : part
+    );
   };
 
   return (
-    <div className="main-content">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header title="Search" subtitle="Find anything in your library" />
-      <div className="page-content search-page">
+      <div className="page-inner search-page">
 
-        {/* Search Input */}
-        <div className="search-hero">
-          <div className="search-input-wrap">
-            <span className="search-icon">⌕</span>
-            <input
-              ref={inputRef}
-              type="text"
-              className="search-input-large"
-              placeholder="Search by title, content, tags..."
-              value={query}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-            />
-            {query && (
-              <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setSearched(false); }}>
-                ✕
-              </button>
-            )}
-            <kbd className="search-kbd">⌘K</kbd>
+        {/* Search box */}
+        <div className="search-box" style={{ marginBottom: 16 }}>
+          <i className="ri-search-2-line search-icon" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search by title, content, tags…"
+            value={query}
+            onChange={handleChange}
+            onKeyDown={e => e.key === 'Enter' && doSearch(query)}
+          />
+          <div className="search-right">
+            {query && <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setSearched(false); }}><i className="ri-close-line" /></button>}
+            <kbd>⌘K</kbd>
           </div>
-          {searched && !loading && (
-            <p className="search-result-count">
-              {results.length > 0 ? `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"` : `No results for "${query}"`}
-            </p>
-          )}
         </div>
+        {searched && !loading && <p className="search-count">{results.length > 0 ? `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"` : `No results for "${query}"`}</p>}
 
         {/* Loading */}
         {loading && (
-          <div className="search-loading">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="search-result-skeleton">
-                <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)' }} />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div className="skeleton" style={{ height: 14, width: '60%' }} />
-                  <div className="skeleton" style={{ height: 12, width: '40%' }} />
+              <div key={i} style={{ display: 'flex', gap: 14, padding: '14px 16px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div className="skeleton" style={{ height: 14, width: '65%' }} />
+                  <div className="skeleton" style={{ height: 11, width: '45%' }} />
                 </div>
               </div>
             ))}
@@ -100,89 +84,55 @@ export default function Search() {
 
         {/* Results */}
         {!loading && results.length > 0 && (
-          <div className="search-results">
-            {results.map(item => (
-              <SearchResult key={item._id} item={item} query={query} />
-            ))}
+          <div className="search-results" style={{ marginTop: 8 }}>
+            {results.map(item => {
+              const clr = getClusterColor(item.topicCluster);
+              const tClr = getTypeColor(item.type);
+              return (
+                <div key={item._id} className="search-result animate-fade">
+                  <div className="sr-type-icon" style={{ background: `${tClr}15`, color: tClr }}>
+                    <i className={TYPE_ICONS[item.type] || 'ri-link'} />
+                  </div>
+                  <div className="sr-body">
+                    <p className="sr-title">{highlight(item.title)}</p>
+                    <div className="sr-meta">
+                      {item.topicCluster && <span className="sr-cluster" style={{ color: clr, background: `${clr}15` }}>{item.topicCluster}</span>}
+                      <span className="sr-time">{formatRelative(item.createdAt)}</span>
+                      {item.tags?.slice(0, 3).map(t => <span key={t} className="tag-pill" style={{ fontSize: '.65rem', padding: '1px 8px' }}>{t}</span>)}
+                    </div>
+                  </div>
+                  {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="sr-open"><i className="ri-external-link-line" /></a>}
+                </div>
+              );
+            })}
           </div>
         )}
 
         {/* Empty */}
         {!loading && searched && results.length === 0 && (
-          <div className="empty-state">
-            <div className="icon">⌕</div>
+          <div className="empty-state" style={{ marginTop: 40 }}>
+            <div className="icon"><i className="ri-search-line" /></div>
             <h3>No results found</h3>
             <p>Try different keywords or browse your library by tag or type.</p>
-            <Link to="/library" className="btn-primary" style={{ marginTop: 16, display: 'inline-block', padding: '10px 24px', borderRadius: 'var(--radius-full)', fontSize: '0.85rem', textDecoration: 'none', background: 'var(--accent)', color: 'white' }}>
-              Browse Library
-            </Link>
+            <Link to="/library" style={{ marginTop: 16, display: 'inline-block', padding: '9px 20px', background: 'var(--accent)', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: '.875rem', fontWeight: 500 }}>Browse Library</Link>
           </div>
         )}
 
-        {/* Initial hints */}
+        {/* Hints */}
         {!searched && (
-          <div className="search-hints">
-            <p className="hints-title">Search tips</p>
+          <div className="search-hints" style={{ marginTop: 24 }}>
+            <p style={{ fontSize: '.85rem', fontWeight: 500, color: 'var(--foreground)', marginBottom: 12 }}>Search tips</p>
             <div className="hints-grid">
               {[
-                { icon: '🏷', text: 'Search by tag: "ai" or "design"' },
-                { icon: '📄', text: 'Find articles by title keywords' },
-                { icon: '📝', text: 'Search your notes content' },
-                { icon: '⌕', text: 'Full-text search across all saved items' },
+                { icon: 'ri-price-tag-3-line', text: 'Search by tag: "ai" or "design"' },
+                { icon: 'ri-article-line',     text: 'Find articles by title keywords' },
+                { icon: 'ri-sticky-note-line', text: 'Search your notes content' },
+                { icon: 'ri-search-eye-line',  text: 'Full-text search across all items' },
               ].map(h => (
-                <div key={h.text} className="hint-item">
-                  <span>{h.icon}</span>
-                  <span>{h.text}</span>
-                </div>
+                <div key={h.text} className="hint-item"><i className={h.icon} /><span>{h.text}</span></div>
               ))}
             </div>
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SearchResult({ item, query }) {
-  const highlight = (text) => {
-    if (!text || !query) return text;
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-    return parts.map((part, i) =>
-      regex.test(part) ? <mark key={i} className="search-highlight">{part}</mark> : part
-    );
-  };
-
-  return (
-    <div className="search-result animate-fade">
-      <div className="sr-type" style={{ background: `${getClusterColor(item.topicCluster)}15`, color: getClusterColor(item.topicCluster) }}>
-        {getTypeIcon(item.type)}
-      </div>
-      <div className="sr-body">
-        <h3 className="sr-title">{highlight(item.title)}</h3>
-        {item.tags?.length > 0 && (
-          <div className="sr-tags">
-            {item.tags.slice(0, 4).map(t => (
-              <span key={t} className={`tag-pill ${query && t.toLowerCase().includes(query.toLowerCase()) ? 'active' : ''}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="sr-meta">
-          {item.topicCluster && (
-            <span className="sr-cluster" style={{ color: getClusterColor(item.topicCluster) }}>
-              {item.topicCluster}
-            </span>
-          )}
-          <span className="sr-time">{formatRelative(item.createdAt)}</span>
-        </div>
-      </div>
-      <div className="sr-actions">
-        {item.url && (
-          <a href={item.url} target="_blank" rel="noopener noreferrer" className="sr-open-btn">
-            Open ↗
-          </a>
         )}
       </div>
     </div>

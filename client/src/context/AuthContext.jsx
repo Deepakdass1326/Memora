@@ -11,6 +11,10 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('memora_token');
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // Tell the extension content script we have a token
+      window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token }, '*');
+
       api.get('/auth/me')
         .then(res => setUser(res.data.user))
         .catch(() => { localStorage.removeItem('memora_token'); delete api.defaults.headers.common['Authorization']; })
@@ -25,6 +29,8 @@ export const AuthProvider = ({ children }) => {
     const { token, user } = res.data;
     localStorage.setItem('memora_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    // Sync token to browser extension
+    window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token }, '*');
     setUser(user);
     return user;
   }, []);
@@ -34,6 +40,8 @@ export const AuthProvider = ({ children }) => {
     const { token, user } = res.data;
     localStorage.setItem('memora_token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    // Sync token to browser extension
+    window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token }, '*');
     setUser(user);
     return user;
   }, []);
@@ -41,6 +49,8 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     localStorage.removeItem('memora_token');
     delete api.defaults.headers.common['Authorization'];
+    // Clear token from browser extension
+    window.postMessage({ source: 'memora_web', type: 'MEMORA_CLEAR_TOKEN' }, '*');
     setUser(null);
   }, []);
 

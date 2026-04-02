@@ -1,71 +1,61 @@
+import './Resurface.scss';
 import React, { useEffect, useState } from 'react';
 import Header from '../components/layout/Header';
 import api from '../services/api';
-import { getTypeIcon, getClusterColor, formatDate } from '../utils/helpers';
-import './Resurface.css';
+import { formatRelative, getTypeColor, getClusterColor } from '../utils/helpers.jsx';
+
+const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line', link:'ri-link' };
 
 export default function Resurface() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/resurface')
-      .then(r => setGroups(r.data.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    api.get('/resurface').then(r => setGroups(r.data.data)).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="main-content">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header title="Memory" subtitle="Rediscover what you saved" />
-      <div className="page-content">
-
+      <div className="page-inner">
         <div className="resurface-hero">
-          <div className="resurface-hero-icon">◎</div>
+          <div className="hero-icon"><i className="ri-history-line" /></div>
           <div>
-            <h2 className="display-md" style={{ fontStyle: 'italic' }}>Your Second Brain Remembers</h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: '0.9rem' }}>
-              Items from your past, resurfaced for reflection and reconnection.
-            </p>
+            <h2>Your Second Brain Remembers</h2>
+            <p>Items from your past, resurfaced for reflection and reconnection.</p>
           </div>
         </div>
 
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-            {[...Array(3)].map((_, i) => (
+            {[...Array(2)].map((_, i) => (
               <div key={i}>
-                <div className="skeleton" style={{ height: 16, width: 160, marginBottom: 16, borderRadius: 4 }} />
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                  {[...Array(3)].map((_, j) => (
-                    <div key={j} className="skeleton" style={{ height: 100, borderRadius: 'var(--radius-lg)' }} />
-                  ))}
+                <div className="skeleton" style={{ height: 20, width: 160, marginBottom: 16 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[...Array(3)].map((_, j) => <div key={j} className="skeleton" style={{ height: 64, borderRadius: 12 }} />)}
                 </div>
               </div>
             ))}
           </div>
         ) : groups.length === 0 ? (
-          <div className="empty-state" style={{ marginTop: 40 }}>
-            <div className="icon">◎</div>
+          <div className="empty-state">
+            <div className="icon"><i className="ri-inbox-archive-line" /></div>
             <h3>Nothing to resurface yet</h3>
             <p>Save items and come back in a few weeks — we'll remind you of forgotten gems.</p>
           </div>
         ) : (
-          <div className="resurface-sections">
+          <div>
             {groups.map(group => (
-              <div key={group.label} className="resurface-section">
-                <div className="rs-header">
+              <div key={group.label} className="resurface-group">
+                <div className="resurface-group-header">
                   <div>
-                    <h3 className="rs-label">{group.label}</h3>
-                    {group.daysAgo && (
-                      <p className="rs-sublabel">Saved approximately {group.daysAgo} days ago</p>
-                    )}
+                    <h3>{group.label}</h3>
+                    {group.daysAgo && <p className="sub">~{group.daysAgo} days ago</p>}
                   </div>
-                  <div className="rs-count">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</div>
+                  <span className="count">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</span>
                 </div>
-                <div className="rs-items">
-                  {group.items.map(item => (
-                    <ResurfaceItem key={item._id} item={item} />
-                  ))}
+                <div className="resurface-list">
+                  {group.items.map(item => <ResurfaceItem key={item._id} item={item} />)}
                 </div>
               </div>
             ))}
@@ -78,49 +68,41 @@ export default function Resurface() {
 
 function ResurfaceItem({ item }) {
   const [expanded, setExpanded] = useState(false);
+  const typeColor = getTypeColor(item.type);
+  const clusterColor = getClusterColor(item.topicCluster);
 
   return (
-    <div className={`rs-item animate-fade ${expanded ? 'expanded' : ''}`}>
-      <div className="rsi-main" onClick={() => setExpanded(!expanded)}>
-        <div className="rsi-type-dot" style={{ background: getClusterColor(item.topicCluster) }} />
-        <div className="rsi-icon">{getTypeIcon(item.type)}</div>
-        <div className="rsi-body">
-          <p className="rsi-title">{item.title}</p>
-          <div className="rsi-meta">
-            <span className="rsi-date">{formatDate(item.createdAt)}</span>
-            {item.topicCluster && (
-              <span className="rsi-cluster" style={{
-                color: getClusterColor(item.topicCluster),
-                background: `${getClusterColor(item.topicCluster)}15`
-              }}>
-                {item.topicCluster}
-              </span>
-            )}
+    <div className={`resurface-item ${expanded ? 'open' : ''} animate-fade`}>
+      <div className="ri-main" onClick={() => setExpanded(o => !o)}>
+        <span className="ri-dot" style={{ background: clusterColor }} />
+        <div className="ri-icon" style={{ background: `${typeColor}15`, color: typeColor }}>
+          <i className={TYPE_ICONS[item.type] || 'ri-link'} />
+        </div>
+        <div className="ri-body">
+          <p>{item.title}</p>
+          <div className="meta">
+            <span className="date">{formatRelative(item.createdAt)}</span>
+            {item.topicCluster && <span className="cluster" style={{ color: clusterColor, background: `${clusterColor}15` }}>{item.topicCluster}</span>}
           </div>
         </div>
-        <div className="rsi-actions">
+        <div className="ri-actions">
           {item.url && (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rsi-open"
-              onClick={e => e.stopPropagation()}
-            >
-              Open ↗
+            <a href={item.url} target="_blank" rel="noopener noreferrer" className="ri-btn" onClick={e => e.stopPropagation()} title="Open original">
+              <i className="ri-external-link-line" />
             </a>
           )}
-          <button className="rsi-expand">{expanded ? '↑' : '↓'}</button>
+          <button className="ri-btn"><i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} /></button>
         </div>
       </div>
-
-      {expanded && item.tags?.length > 0 && (
-        <div className="rsi-expanded animate-fade">
-          <div className="rsi-tags">
-            {item.tags.map(t => (
-              <span key={t} className="tag-pill" style={{ fontSize: '0.7rem' }}>{t}</span>
-            ))}
-          </div>
+      {expanded && (
+        <div className="ri-expanded animate-fade">
+          {item.description && <p>{item.description}</p>}
+          {item.tags?.length > 0 && (
+            <div className="tags">
+              {item.tags.map(t => <span key={t} className="tag-pill" style={{ fontSize: '.68rem' }}>{t}</span>)}
+            </div>
+          )}
+          {!item.description && (!item.tags || item.tags.length === 0) && <p style={{ fontStyle: 'italic' }}>No additional details.</p>}
         </div>
       )}
     </div>

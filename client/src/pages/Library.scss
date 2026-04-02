@@ -1,0 +1,72 @@
+@use '../styles/mixins' as m;
+
+// ── Filter bar ───────────────────────────────────────────
+.filter-bar {
+  @include m.flex(row, center, space-between, 12px);
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+
+  .filters { @include m.flex(row, center, flex-start, 6px); flex-wrap: wrap; }
+}
+
+.filter-btn {
+  @include m.btn-reset;
+  @include m.flex(row, center, center, 5px);
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-fg);
+  font-size: .78rem;
+  font-weight: 500;
+  @include m.transition;
+
+  &.active {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  &:hover:not(.active) { color: var(--foreground); background: var(--muted); }
+}
+
+// ── View toggle ──────────────────────────────────────────
+.view-toggle {
+  @include m.flex(row, center, flex-start);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+
+  button {
+    @include m.btn-reset;
+    padding: 6px 10px;
+    font-size: 15px;
+    color: var(--muted-fg);
+    @include m.transition;
+    &.active { background: var(--card); color: var(--foreground); }
+  }
+}
+
+// ── Tag filter strip ─────────────────────────────────────
+.tag-filter-bar {
+  @include m.flex(row, flex-start, flex-start, 6px);
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+// ── List view item ───────────────────────────────────────
+.list-item {
+  @include m.flex(row, center, flex-start, 14px);
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  @include m.transition;
+
+  &:hover { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
+
+  .list-icon  { width: 36px; height: 36px; border-radius: 8px; @include m.flex(row, center, center); font-size: 17px; flex-shrink: 0; }
+  .list-title { font-size: .9rem; font-weight: 500; color: var(--foreground); }
+  .list-meta  { font-size: .75rem; color: var(--muted-fg); margin-top: 3px; }
+}

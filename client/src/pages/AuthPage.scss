@@ -1,0 +1,144 @@
+@use '../styles/mixins' as m;
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+
+  // ── Left decorative panel ──
+  &__panel {
+    display: none;
+
+    @media (min-width: 1024px) { display: flex; flex-direction: column; justify-content: space-between; }
+
+    width: 45%;
+    background: var(--accent);
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+    }
+    &::before { width: 300px; height: 300px; background: rgba(255,255,255,.06); top: -80px; left: -80px; }
+    &::after  { width: 400px; height: 400px; background: rgba(0,0,0,.08); bottom: -100px; right: -100px; }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 3.2rem;
+      color: #fff;
+      line-height: 1.1;
+      letter-spacing: -.03em;
+      position: relative; z-index: 1;
+      em { font-style: italic; }
+    }
+    .sub { color: rgba(255,255,255,.7); font-size: .9rem; margin-top: 10px; position: relative; z-index: 1; }
+
+    .features { margin-top: 32px; @include m.flex(column, flex-start, flex-start, 14px); position: relative; z-index: 1; }
+    .feature-item {
+      @include m.flex(row, center, flex-start, 12px);
+      .icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,.12); @include m.flex(row, center, center); color: #fff; font-size: 15px; flex-shrink: 0; }
+      span  { color: rgba(255,255,255,.8); font-size: .875rem; }
+    }
+    .tagline { color: rgba(255,255,255,.35); font-size: .75rem; position: relative; z-index: 1; }
+  }
+
+  // ── Right form area ──
+  &__form-wrap {
+    flex: 1;
+    @include m.flex(column, center, center);
+    padding: 40px 32px;
+    background: var(--background);
+  }
+
+  &__form-inner { width: 100%; max-width: 360px; }
+
+  &__logo-mobile {
+    @include m.flex(row, center, flex-start, 8px);
+    margin-bottom: 32px;
+    @media (min-width: 1024px) { display: none; }
+
+    .logo-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); @include m.flex(row, center, center); color: #fff; font-weight: 700; }
+    span { font-family: var(--font-display); font-style: italic; font-size: 1.3rem; color: var(--foreground); }
+  }
+
+  // ── Mode tabs ──
+  .mode-tabs {
+    @include m.flex(row, center, flex-start);
+    background: var(--muted);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 28px;
+
+    button {
+      @include m.btn-reset;
+      flex: 1; padding: 8px;
+      border-radius: 9px;
+      font-size: .875rem; font-weight: 500;
+      color: var(--muted-fg);
+      @include m.transition;
+      &.active { background: var(--card); color: var(--foreground); box-shadow: var(--shadow-xs); }
+    }
+  }
+
+  .form-heading { font-size: 1.5rem; font-weight: 600; color: var(--foreground); }
+  .form-sub     { font-size: .85rem; color: var(--muted-fg); margin-top: 4px; margin-bottom: 24px; }
+  .form-group   { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: .8rem; font-weight: 500;
+    color: var(--foreground); margin-bottom: 6px;
+  }
+
+  .form-input {
+    width: 100%; padding: 9px 13px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input);
+    color: var(--foreground);
+    font-size: .9rem; font-family: var(--font-body);
+    outline: none;
+    @include m.transition(border-color);
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    &::placeholder { color: var(--muted-fg); }
+  }
+
+  .form-error {
+    padding: 10px 14px; border-radius: 8px;
+    background: color-mix(in srgb, #ef4444 10%, transparent);
+    border: 1px solid color-mix(in srgb, #ef4444 25%, transparent);
+    color: #ef4444; font-size: .85rem;
+    margin-bottom: 16px;
+  }
+
+  .form-btn {
+    @include m.btn-reset;
+    @include m.flex(row, center, center, 8px);
+    width: 100%; padding: 10px;
+    border-radius: 9px;
+    background: var(--accent); color: #fff;
+    font-size: .95rem; font-weight: 500;
+    margin-top: 8px;
+    @include m.transition(opacity);
+
+    &:hover:not(:disabled) { opacity: .88; }
+    &:disabled { opacity: .55; cursor: not-allowed; }
+  }
+
+  .form-switch {
+    text-align: center; margin-top: 20px;
+    font-size: .85rem; color: var(--muted-fg);
+
+    button {
+      @include m.btn-reset;
+      color: var(--accent); font-weight: 500;
+      &:hover { text-decoration: underline; }
+    }
+  }
+}

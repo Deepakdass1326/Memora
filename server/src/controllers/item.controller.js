@@ -1,7 +1,8 @@
 const Item = require('../models/Item.model');
 const Collection = require('../models/Collection.model');
 const User = require('../models/User.model');
-const { generateTags, detectTopicCluster, findRelatedItems } = require('../services/aiTagging.service');
+const { generateTags, findRelatedItems } = require('../services/aiTagging.service');
+const { scrapeUrl } = require('../services/scraper.service');
 
 // @desc  Get all items for user
 // @route GET /api/items
@@ -37,14 +38,42 @@ const createItem = async (req, res) => {
   try {
     const { title, description, url, type, content, thumbnail, source, author, tags: manualTags, collections } = req.body;
 
-    // AI tag generation
-    const aiTags = generateTags({ title, description, content, type, source });
-    const finalTags = [...new Set([...(manualTags || []), ...aiTags])];
-    const topicCluster = detectTopicCluster(finalTags, title, description);
+    // ── 1. Auto-scrape URL metadata if URL provided ──────────────────────
+    let scraped = null;
+    if (url) {
+      scraped = await scrapeUrl(url);
+    }
 
+    // User-provided fields win; scraped data fills in the blanks
+    const finalTitle       = title       || scraped?.title       || 'Untitled';
+    const finalDescription = description || scraped?.description || '';
+    const finalThumbnail   = thumbnail   || scraped?.thumbnail   || '';
+    const finalSource      = source      || scraped?.source      || '';
+    const finalAuthor      = author      || scraped?.author      || '';
+    const finalContent     = content     || scraped?.content     || '';
+
+    // ── 2. AI tag generation (Gemini or rule-based fallback) ──────────────
+    const { tags: aiTags, topicCluster } = await generateTags({
+      title: finalTitle,
+      description: finalDescription,
+      content: finalContent,
+      type,
+      source: finalSource,
+    });
+
+    const finalTags = [...new Set([...(manualTags || []), ...aiTags])];
+
+    // ── 3. Save item ───────────────────────────────────────────────────────
     const item = new Item({
       user: req.user._id,
-      title, description, url, type, content, thumbnail, source, author,
+      title: finalTitle,
+      description: finalDescription,
+      url,
+      type,
+      content: finalContent,
+      thumbnail: finalThumbnail,
+      source: finalSource,
+      author: finalAuthor,
       tags: finalTags,
       topicCluster,
       collections: collections || [],
@@ -52,15 +81,15 @@ const createItem = async (req, res) => {
 
     await item.save();
 
-    // Update collection counts
+    // ── 4. Update collection counts ────────────────────────────────────────
     if (collections?.length) {
       await Collection.updateMany({ _id: { $in: collections } }, { $inc: { itemCount: 1 } });
     }
 
-    // Update user stats
+    // ── 5. Update user stats ───────────────────────────────────────────────
     await User.findByIdAndUpdate(req.user._id, { $inc: { 'stats.totalItems': 1 } });
 
-    // Find & link related items async
+    // ── 6. Find & link related items (async, non-blocking) ─────────────────
     const userItems = await Item.find({ user: req.user._id, _id: { $ne: item._id } }).select('_id tags topicCluster type');
     const related = await findRelatedItems({ ...item.toObject(), tags: finalTags }, userItems);
     if (related.length) {
@@ -68,7 +97,10 @@ const createItem = async (req, res) => {
       await Item.updateMany({ _id: { $in: related } }, { $addToSet: { relatedItems: item._id } });
     }
 
-    const populated = await Item.findById(item._id).populate('collections', 'name emoji color').populate('relatedItems', 'title type thumbnail');
+    const populated = await Item.findById(item._id)
+      .populate('collections', 'name emoji color')
+      .populate('relatedItems', 'title type thumbnail');
+
     res.status(201).json({ success: true, data: populated, suggestedTags: aiTags });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -150,6 +182,22 @@ const addHighlight = async (req, res) => {
   }
 };
 
+// @desc  Delete highlight from item
+// @route DELETE /api/items/:id/highlights/:highlightId
+const deleteHighlight = async (req, res) => {
+  try {
+    const item = await Item.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      { $pull: { highlights: { _id: req.params.highlightId } } },
+      { new: true }
+    );
+    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+    res.json({ success: true, data: item.highlights });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // @desc  Get knowledge graph data
 // @route GET /api/items/graph
 const getGraphData = async (req, res) => {
@@ -168,8 +216,13 @@ const getGraphData = async (req, res) => {
     }));
 
     const links = [];
+    const nodeIds = new Set(nodes.map(n => String(n.id)));
+
     items.forEach(item => {
+      // 1. Explicit related items from the semantic AI
       item.relatedItems.forEach(relId => {
+        if (!nodeIds.has(relId.toString())) return; // Prevent D3 crash
+
         const exists = links.some(l =>
           (l.source === item._id.toString() && l.target === relId.toString()) ||
           (l.source === relId.toString() && l.target === item._id.toString())
@@ -178,9 +231,24 @@ const getGraphData = async (req, res) => {
           links.push({ source: item._id.toString(), target: relId.toString() });
         }
       });
+
+      // 2. Implicit relations (nodes that share identical tags)
+      items.forEach(otherItem => {
+        if (item._id.toString() === otherItem._id.toString()) return;
+        const sharedTags = item.tags.filter(t => otherItem.tags.includes(t));
+        if (sharedTags.length > 0) {
+          const exists = links.some(l =>
+            (l.source === item._id.toString() && l.target === otherItem._id.toString()) ||
+            (l.source === otherItem._id.toString() && l.target === item._id.toString())
+          );
+          if (!exists) {
+            links.push({ source: item._id.toString(), target: otherItem._id.toString() });
+          }
+        }
+      });
     });
 
-    // Tag-based cluster links
+    // Tag-based cluster map
     const tagMap = {};
     items.forEach(item => {
       item.tags.forEach(tag => {
@@ -195,4 +263,4 @@ const getGraphData = async (req, res) => {
   }
 };
 
-module.exports = { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, getGraphData };
+module.exports = { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, deleteHighlight, getGraphData };
