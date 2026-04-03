@@ -36,14 +36,15 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many auth attempts, please try again later.' },
 });
 
-// Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    // Accept all origins — security is enforced by httpOnly cookies, not origin filtering
-    callback(null, true);
-  },
+// Middleware - CORS must be first, before rate limiter
+const corsOptions = {
+  origin: true, // Accept all origins — security enforced by httpOnly cookies
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Explicitly handle all OPTIONS preflight requests
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -68,8 +69,8 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+// Health check — also confirms CORS is working if reachable from frontend
+app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '2.0.0', timestamp: new Date() }));
 
 // Global error handler
 app.use((err, req, res, next) => {
