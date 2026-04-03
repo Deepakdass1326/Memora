@@ -206,15 +206,6 @@ YouTube blocks generic scrapers. Memora detects YouTube URLs and uses the **oEmb
 
 ---
 
-## 📈 Scale-Up Plan
-
-See [SCALE_UP.md](./SCALE_UP.md) for the full plan covering:
-- **ImageKit** — CDN file uploads (partially implemented: `storage.service.js` done)
-- **Pinecone** — Production vector database for fast semantic search at scale
-- **BullMQ + Redis** — Background queue for async AI processing
-
----
-
 ## 🌐 Deployment
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full step-by-step deployment guide covering Render, Vercel, and the Chrome Extension.
