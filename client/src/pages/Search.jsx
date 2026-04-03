@@ -110,7 +110,6 @@ export default function Search() {
           />
           <div className="search-right">
             {query && <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setInternet([]); setVideos([]); setSearched(false); }}><i className="ri-close-line" /></button>}
-            <kbd>⌘K</kbd>
           </div>
         </div>
 

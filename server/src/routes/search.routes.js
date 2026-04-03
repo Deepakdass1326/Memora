@@ -69,10 +69,9 @@ router.get('/', async (req, res) => {
         const axios = require('axios');
         const yt = require('youtube-search-api');
         
-        const [ytRes, wikiRes, devRes] = await Promise.all([
+        const [ytRes, wikiRes] = await Promise.all([
           yt.GetListByKeyword(q, false, 3).catch(() => ({ items: [] })),
-          axios.get(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(q)}&limit=2&format=json`, { headers: {'User-Agent':'MemoraBot/1.0'} }).catch(() => ({ data: [] })),
-          axios.get(`https://dev.to/api/articles?per_page=2&q=${encodeURIComponent(q)}`).catch(() => ({ data: [] }))
+          axios.get(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&utf8=&format=json&srlimit=2`, { headers: {'User-Agent':'MemoraBot/1.0'} }).catch(() => ({ data: {} }))
         ]);
 
         videos = ytRes.items?.filter(v => v.type === 'video').map(v => ({
@@ -82,19 +81,13 @@ router.get('/', async (req, res) => {
           thumbnail: v.thumbnail?.thumbnails?.[0]?.url || ''
         })) || [];
 
-        const wikiArticles = wikiRes.data?.[1]?.map((title, i) => ({
-          title: title + ' (Wikipedia)',
-          description: wikiRes.data?.[2]?.[i] || 'Knowledge base article',
-          url: wikiRes.data?.[3]?.[i]
+        const wikiArticles = wikiRes.data?.query?.search?.map(item => ({
+          title: item.title + ' (Wikipedia)',
+          description: item.snippet ? item.snippet.replace(/<\/?[^>]+(>|$)/g, "") + '...' : 'Knowledge base article',
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`
         })) || [];
 
-        const devArticles = devRes.data?.map(art => ({
-          title: art.title,
-          description: art.description || 'Tech blog article',
-          url: art.url
-        })) || [];
-
-        internet = [...devArticles, ...wikiArticles];
+        internet = [...wikiArticles];
       } catch (e) {
         console.warn("[External APIs] Search error", e);
       }

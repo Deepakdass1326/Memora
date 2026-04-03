@@ -11,6 +11,7 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     overflow: hidden;
+    height: 61px; // Match header height mostly
 
     &__mark {
       width: 32px; height: 32px;
@@ -43,6 +44,21 @@
       @include m.transition(color);
       &:hover { color: var(--foreground); }
       &.rotated { transform: rotate(180deg); }
+    }
+  }
+
+  &.collapsed {
+    .sidebar-logo {
+      padding: 14px 0;
+      justify-content: center;
+      
+      &__mark {
+        display: none; // hide mark to make room for toggle button
+      }
+      &__toggle {
+        margin-left: 0;
+        font-size: 22px; // slightly larger when it's the only thing
+      }
     }
   }
 

@@ -8,8 +8,8 @@ import api from '../services/api';
 import { formatRelative } from '../utils/helpers';
 import './Dashboard.scss';
 
-const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line' };
-const STAT_TYPES = ['article','video','tweet','image','pdf','note'];
+const TYPE_ICONS = { article: 'ri-article-line', video: 'ri-play-circle-line', tweet: 'ri-twitter-x-line', image: 'ri-image-line', pdf: 'ri-file-pdf-line', note: 'ri-sticky-note-line' };
+const STAT_TYPES = ['article', 'video', 'tweet', 'image', 'pdf', 'note'];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -20,8 +20,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchItems({ limit: 8 });
-    api.get('/tags').then(r => setTags(r.data.data.slice(0, 14))).catch(() => {});
-    api.get('/notes').then(r => setRecentNotes(r.data.data.slice(0, 4))).catch(() => {});
+    api.get('/tags').then(r => setTags(r.data.data.slice(0, 14))).catch(() => { });
+    api.get('/notes').then(r => setRecentNotes(r.data.data.slice(0, 4))).catch(() => { });
   }, []);
 
   const handleDeleteNote = async (e, noteId) => {
@@ -46,7 +46,14 @@ export default function Dashboard() {
   }, [items]);
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting =
+    hour >= 5 && hour < 12 ? 'Good morning' :
+      hour >= 12 && hour < 17 ? 'Good afternoon' :
+        hour >= 17 && hour < 21 ? 'Good evening' : 'Good night';
+  const greetingEmoji =
+    hour >= 5 && hour < 12 ? '🌤️' :
+      hour >= 12 && hour < 17 ? '☀️' :
+        hour >= 17 && hour < 21 ? '🌆' : '🌙';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -56,7 +63,7 @@ export default function Dashboard() {
         {/* Hero */}
         <div className="dashboard-hero">
           <div>
-            <p className="dashboard-hero__greeting">{greeting} 👋</p>
+            <p className="dashboard-hero__greeting">{greeting} {greetingEmoji}</p>
             <h1 className="dashboard-hero__name">
               {user?.name?.split(' ')[0]}<span className="accent">.</span>
             </h1>
@@ -127,19 +134,24 @@ export default function Dashboard() {
             <div className="items-grid">
               {recentNotes.map(note => (
                 <Link key={note._id} to={`/workspace/${note.workspace?._id || note.workspace}`} className="item-card animate-fade" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
-                  <div className="card-body" style={{ padding: '20px 16px' }}>
-                    <h3 className="card-body__title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem' }}>
-                      <i className="ri-sticky-note-line" style={{ color: 'var(--type-note)' }} />
-                      {note.title || 'Untitled Note'}
-                    </h3>
+                  <div className="card-body" style={{ flex: 1 }}>
+                    <div className="card-body__meta">
+                      <span className="card-body__cluster" style={{ color: 'var(--type-note)', background: 'color-mix(in srgb, var(--type-note) 12%, transparent)' }}>
+                        {note.workspace?.name || 'note'}
+                      </span>
+                    </div>
+                    <p className="card-body__title">{note.title || 'Untitled Note'}</p>
                   </div>
-                  
-                  <div className="card-footer" style={{ marginTop: 'auto' }}>
+                  {/* Footer — actions fade in on hover exactly like other cards */}
+                  <div className="card-footer">
                     <span className="card-footer__time">
                       {note.createdAt ? formatRelative(note.createdAt) : 'Just now'}
                     </span>
                     <div className="card-actions" onClick={e => e.stopPropagation()}>
-                      <button className="card-btn" onClick={(e) => { e.preventDefault(); handleDeleteNote(e, note._id); }} title="Delete Note">
+                      <button className="card-btn card-btn--fav" title="Favorite">
+                        <i className="ri-heart-line" />
+                      </button>
+                      <button className="card-btn card-btn--danger" onClick={(e) => { e.preventDefault(); handleDeleteNote(e, note._id); }} title="Delete Note">
                         <i className="ri-delete-bin-line" />
                       </button>
                     </div>
@@ -169,9 +181,9 @@ export default function Dashboard() {
         <section>
           <div className="quick-links">
             {[
-              { to: '/graph',     icon: 'ri-node-tree',     title: 'Knowledge Graph',  desc: 'Visualize connections between ideas' },
-              { to: '/search',    icon: 'ri-search-2-line', title: 'Semantic Search',  desc: 'Find anything in your library' },
-              { to: '/resurface', icon: 'ri-history-line',  title: 'Memory Resurface', desc: 'Rediscover forgotten gems from your past' },
+              { to: '/graph', icon: 'ri-node-tree', title: 'Knowledge Graph', desc: 'Visualize connections between ideas' },
+              { to: '/search', icon: 'ri-search-2-line', title: 'Semantic Search', desc: 'Find anything in your library' },
+              { to: '/resurface', icon: 'ri-history-line', title: 'Memory Resurface', desc: 'Rediscover forgotten gems from your past' },
             ].map(item => (
               <Link key={item.to} to={item.to} className="quick-link-item">
                 <div className="icon-wrap"><i className={item.icon} /></div>

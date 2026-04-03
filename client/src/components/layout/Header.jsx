@@ -18,7 +18,6 @@ export default function Header({ title, subtitle }) {
           <button className="header-btn" onClick={() => navigate('/search')}>
             <i className="ri-search-line" />
             <span>Search</span>
-            <kbd>⌘K</kbd>
           </button>
           <button className="header-btn-primary" onClick={() => setShowSave(true)}>
             <i className="ri-add-line" />

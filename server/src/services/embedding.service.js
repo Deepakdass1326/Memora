@@ -101,10 +101,10 @@ const cosineSimilarity = (a, b) => {
  *
  * @param {string}   queryText  - The raw search query
  * @param {object[]} items      - Mongoose item documents (must have .embedding field)
- * @param {number}   threshold  - Minimum similarity score (0–1), default 0.45
+ * @param {number}   threshold  - Minimum similarity score (0–1), default 0.72 (Gemini embeddings baseline is ~0.60)
  * @returns {Promise<Array<{item, score}>>}
  */
-const rankBySimilarity = async (queryText, items, threshold = 0.45) => {
+const rankBySimilarity = async (queryText, items, threshold = 0.72) => {
   const queryEmbedding = await generateEmbedding(queryText, 'RETRIEVAL_QUERY');
   if (!queryEmbedding) {
     console.warn('[Embedding] Could not embed query — returning empty');
