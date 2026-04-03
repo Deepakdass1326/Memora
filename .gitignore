@@ -13,3 +13,9 @@ npm-debug.log*
 *.zip
 coverage/
 .cache/
+
+# Internal project docs (keep local only)
+ARCHITECTURE.md
+PROJECT_MAPPING.md
+DEPLOYMENT.md
+missing.md
