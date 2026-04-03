@@ -3,7 +3,11 @@
 > Save anything from the web. AI organizes, connects, and resurfaces it for you.
 
 ![Memora](https://img.shields.io/badge/Stack-MERN-2D6A4F?style=flat-square)
+![Live](https://img.shields.io/badge/Live-Deployed-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+🔗 **Live App**: [memora-three-iota.vercel.app](https://memora-three-iota.vercel.app)
+🔗 **API**: [memora-backend-24mk.onrender.com/api/health](https://memora-backend-24mk.onrender.com/api/health)
 
 ---
 
@@ -12,14 +16,18 @@
 | Feature | Description |
 |---|---|
 | **Save Anything** | Articles, tweets, videos, images, PDFs, notes, links |
-| **AI Tagging** | Automatic semantic tag generation from content |
-| **Topic Clustering** | Groups items into knowledge domains (tech, design, etc.) |
+| **AI Tagging** | Multi-LLM semantic tag generation (Gemini + Mistral + Cohere) |
+| **Semantic Search** | AI-powered search using Google Gemini embeddings |
+| **Internet Search** | Live web results from YouTube, Dev.to, and Wikipedia alongside saved items |
+| **Search History** | Clickable recent searches with delete support |
+| **Topic Clustering** | Groups items into knowledge domains (tech, design, health, etc.) |
 | **Knowledge Graph** | D3.js interactive visualization of how items connect |
-| **Semantic Search** | Full-text search across titles, content, and tags |
 | **Memory Resurface** | "2 months ago you saved this..." rediscovery engine |
 | **Collections** | Curated folders with emoji + color |
-| **Highlights** | Annotate saved content with colored highlights |
+| **Workspaces & Notes** | Create workspaces with rich markdown notes |
 | **Related Items** | Automatic cross-linking of related knowledge |
+| **Chrome Extension** | One-click save from any webpage |
+| **Secure Auth** | httpOnly cookie-based JWT auth (XSS-proof) |
 
 ---
 
@@ -27,57 +35,88 @@
 
 ```
 memora/
-├── client/                    # React frontend
+├── client/                    # React + Vite frontend (deployed on Vercel)
 │   └── src/
 │       ├── components/
 │       │   ├── layout/        # Sidebar, Header
 │       │   ├── dashboard/     # ItemCard
 │       │   ├── graph/         # D3 KnowledgeGraph
+│       │   ├── notes/         # NoteEditor
 │       │   └── save/          # SaveItemModal
-│       ├── context/           # AuthContext, ItemsContext
-│       ├── hooks/             # Custom hooks
-│       ├── pages/             # Dashboard, Library, Graph, Search, Resurface
-│       ├── services/          # axios api client
+│       ├── context/           # AuthContext
+│       ├── pages/             # Dashboard, Library, Search, Resurface, Workspace
+│       ├── services/          # Axios API client (withCredentials)
 │       └── utils/             # helpers
 │
-└── server/                    # Express + MongoDB backend
-    └── src/
-        ├── config/            # database.js
-        ├── controllers/       # auth, item, resurface
-        ├── middleware/        # auth.middleware.js
-        ├── models/            # User, Item, Collection
-        ├── routes/            # REST API routes
-        ├── services/          # aiTagging.service.js
-        └── utils/             # helpers, seed
+├── server/                    # Express + MongoDB backend (deployed on Render)
+│   └── src/
+│       ├── config/            # database.js
+│       ├── controllers/       # auth, item, note, workspace
+│       ├── middleware/        # auth.middleware.js (cookie-based)
+│       ├── models/            # User, Item, Collection, Note, Workspace
+│       ├── routes/            # REST API routes
+│       └── services/          # aiTagging, aiRouter, embedding
+│
+└── extension/                 # Chrome Extension
+    ├── manifest.json
+    ├── popup.html / popup.js
+    └── background.js
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Local)
 
 ### Prerequisites
 - Node.js 18+
-- MongoDB (local or Atlas)
+- MongoDB Atlas account
+- Gemini API key (free tier)
 
 ### Install & Run
 
 ```bash
-# Clone and install all dependencies
-git clone <repo>
-cd memora
+# Clone
+git clone https://github.com/Deepakdass1326/Memora.git
+cd Memora
+
+# Install all dependencies
 npm run install:all
 
-# Configure server environment
+# Configure backend
 cp server/.env.example server/.env
-# Edit server/.env with your MongoDB URI and JWT secret
+# Fill in: MONGODB_URI, JWT_SECRET, GEMINI_API_KEY
 
-# Start both client + server in development
+# Start both client + server
 npm run dev
 ```
 
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:5000/api
 - **Health check**: http://localhost:5000/api/health
+
+---
+
+## 🤖 AI Architecture
+
+Memora uses a **multi-LLM routing system** to distribute AI load and avoid rate limits:
+
+| Task | Primary Model | Fallback |
+|---|---|---|
+| Generate Note | Gemini 2.5 Flash | Mistral |
+| Summarize | Mistral | Gemini |
+| Auto-Tagging | Cohere | Gemini |
+| Embeddings | Gemini text-embedding-004 | — |
+
+If a model's API key is missing, it is automatically skipped.
+
+---
+
+## 🔒 Security
+
+- **Authentication**: `httpOnly` secure cookies (not localStorage) — XSS-proof
+- **CORS**: Configured for Vercel frontend and Chrome Extension origin
+- **Rate Limiting**: Global + per-auth-route rate limiting via `express-rate-limit`
+- **Cookie Policy**: `sameSite: none` + `secure: true` in production for cross-domain
 
 ---
 
@@ -87,64 +126,67 @@ npm run dev
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/api/auth/register` | Create account |
-| POST | `/api/auth/login` | Sign in |
-| GET | `/api/auth/me` | Current user |
+| POST | `/api/auth/login` | Sign in (sets cookie) |
+| POST | `/api/auth/logout` | Sign out (clears cookie) |
+| GET | `/api/auth/me` | Current user session |
 
 ### Items
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/items` | List items (filter by type, tag, collection) |
+| GET | `/api/items` | List items |
 | POST | `/api/items` | Save new item (AI tags auto-generated) |
 | GET | `/api/items/graph` | Knowledge graph data |
 | PUT | `/api/items/:id` | Update item |
 | DELETE | `/api/items/:id` | Delete item |
-| PATCH | `/api/items/:id/favorite` | Toggle favorite |
-| POST | `/api/items/:id/highlights` | Add highlight |
+
+### Search
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/search?q=` | Semantic + internet search |
+| GET | `/api/search/history` | Recent search queries |
+| DELETE | `/api/search/history/:query` | Remove from history |
 
 ### Other
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/search?q=` | Full-text search |
 | GET | `/api/tags` | All user tags with counts |
 | GET | `/api/resurface` | Memory resurfacing groups |
 | GET | `/api/collections` | User collections |
+| GET | `/api/workspaces` | Workspaces |
+| GET | `/api/notes?workspace=` | Notes in a workspace |
 
 ---
 
 ## 🧩 Tech Stack
 
 **Frontend**
-- React 18 + React Router 6
+- React 18 + Vite + React Router 6
 - D3.js v7 — knowledge graph visualization
-- Framer Motion — animations
-- DM Serif Display + DM Sans + DM Mono — typography system
-- CSS custom properties — design tokens
+- Axios with `withCredentials: true` — cookie-based auth
+- SCSS + CSS custom properties — design tokens
+- Deployed on **Vercel**
 
 **Backend**
 - Node.js + Express
-- MongoDB + Mongoose
-- JWT authentication
-- Rule-based NLP tagging (production: swap for OpenAI embeddings)
+- MongoDB Atlas + Mongoose
+- `httpOnly` cookie auth via `cookie-parser`
+- `@google/generative-ai` + LangChain — Gemini embeddings & tagging
+- `youtube-search-api`, `axios` — live internet search
+- Deployed on **Render**
 
-**Planned / Production Extensions**
-- Vector DB (Pinecone / Weaviate) for semantic embeddings
-- OpenAI/Claude API for richer tag suggestions
-- Browser extension (Chrome/Firefox) for one-click saving
-- Object storage (S3) for thumbnails and PDFs
-- BullMQ workers for async processing
+**Chrome Extension**
+- Manifest V3
+- Content script + background service worker
+- Communicates with live Render backend via cookies
 
 ---
 
-## 🎨 Design System
+## 🌐 Deployment
 
-- **Font**: DM Serif Display (headings) + DM Sans (body) + DM Mono (code/meta)
-- **Color**: Warm off-white base (`#FAFAF8`), forest green accent (`#2D6A4F`)
-- **Aesthetic**: Light, minimal, modern — editorial yet functional
-- **Radius**: Consistent radius scale from `6px` to `24px`
-- **Shadows**: Subtle, layered shadow system
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full step-by-step deployment guide covering Render, Vercel, and the Chrome Extension.
 
 ---
 
 ## 📄 License
 
-MIT © 2024 Memora
+MIT © 2025 Memora
