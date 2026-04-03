@@ -150,6 +150,11 @@ export default function KnowledgeGraph() {
               {selectedNode.tags.map(t => <span key={t} className="tag-pill" style={{ fontSize: '.68rem' }}>{t}</span>)}
             </div>
           )}
+          {selectedNode.workspaceName && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5, padding: '6px 0 0' }}>
+              <i className="ri-layout-grid-line" /> From Workspace: {selectedNode.workspaceName}
+            </div>
+          )}
         </div>
       )}
 

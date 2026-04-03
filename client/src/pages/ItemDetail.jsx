@@ -19,6 +19,7 @@ export default function ItemDetail() {
   const [pickerColor, setPickerColor] = useState('#FEF08A');
   const [highlightNote, setHighlightNote] = useState('');
   const [addingHighlight, setAddingHighlight] = useState(false);
+  const [confirmDeleteHighlight, setConfirmDeleteHighlight] = useState(null);
 
   useEffect(() => {
     api.get(`/items/${id}`).then(r => setItem(r.data.data)).catch(() => setError('Item not found.')).finally(() => setLoading(false));
@@ -47,6 +48,8 @@ export default function ItemDetail() {
   };
 
   const deleteHighlight = async (hid) => {
+    if (confirmDeleteHighlight !== hid) { setConfirmDeleteHighlight(hid); return; }
+    setConfirmDeleteHighlight(null);
     try { const res = await api.delete(`/items/${id}/highlights/${hid}`); setItem(prev => ({ ...prev, highlights: res.data.data })); }
     catch (err) { console.error(err); }
   };
@@ -168,7 +171,14 @@ export default function ItemDetail() {
                   {h.note && <div className="hc-note"><i className="ri-chat-1-line" />{h.note}</div>}
                   <div className="hc-footer">
                     <span className="hc-date">{new Date(h.createdAt).toLocaleDateString()}</span>
-                    <button className="hc-delete" onClick={() => deleteHighlight(h._id)} title="Delete"><i className="ri-delete-bin-line" /></button>
+                    {confirmDeleteHighlight === h._id ? (
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="hc-delete" onClick={() => deleteHighlight(h._id)} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>✓ Delete</button>
+                        <button onClick={() => setConfirmDeleteHighlight(null)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--foreground)' }}>✕</button>
+                      </div>
+                    ) : (
+                      <button className="hc-delete" onClick={() => deleteHighlight(h._id)} title="Delete"><i className="ri-delete-bin-line" /></button>
+                    )}
                   </div>
                 </div>
               ))}

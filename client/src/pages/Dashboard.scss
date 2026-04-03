@@ -24,16 +24,44 @@
 }
 
 .stat-chip {
-  @include m.flex(column, center, center, 4px);
-  padding: 12px 16px;
-  border-radius: 12px;
+  @include m.flex(row, center, flex-start, 14px);
+  padding: 14px 20px;
+  border-radius: 16px;
   background: var(--card);
   border: 1px solid var(--border);
-  min-width: 68px;
+  min-width: 130px;
+  @include m.transition;
+  cursor: default;
 
-  i { font-size: 20px; color: var(--muted-fg); }
-  &__num  { font-family: var(--font-display); font-size: 1.4rem; color: var(--foreground); }
-  &__label { font-size: .65rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+
+  &__icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    @include m.flex(row, center, center);
+    flex-shrink: 0;
+    font-size: 20px;
+  }
+
+  &__info {
+    @include m.flex(column, flex-start, center, 1px);
+  }
+
+  &__num   { font-family: var(--font-display); font-size: 1.7rem; color: var(--foreground); line-height: 1; }
+  &__label { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-fg); margin-top: 2px; }
+
+  // Per-type accent colors
+  &--article .stat-chip__icon { background: color-mix(in srgb, var(--type-article) 12%, transparent); color: var(--type-article); }
+  &--video   .stat-chip__icon { background: color-mix(in srgb, var(--type-video)   12%, transparent); color: var(--type-video);   }
+  &--tweet   .stat-chip__icon { background: color-mix(in srgb, var(--type-tweet)   12%, transparent); color: var(--type-tweet);   }
+  &--image   .stat-chip__icon { background: color-mix(in srgb, var(--type-image)   12%, transparent); color: var(--type-image);   }
+  &--pdf     .stat-chip__icon { background: color-mix(in srgb, var(--type-pdf)     12%, transparent); color: var(--type-pdf);     }
+  &--note    .stat-chip__icon { background: color-mix(in srgb, var(--type-note)    12%, transparent); color: var(--type-note);    }
+  &--link    .stat-chip__icon { background: color-mix(in srgb, var(--type-link)    12%, transparent); color: var(--type-link);    }
 }
 
 // ── Section headers ───────────────────────────────────────

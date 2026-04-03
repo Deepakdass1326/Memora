@@ -17,7 +17,7 @@ const TOPIC_CLUSTERS = {
   business: ['business', 'startup', 'entrepreneur', 'marketing', 'sales', 'revenue', 'growth', 'strategy', 'product', 'finance', 'investment', 'venture'],
   health: ['health', 'fitness', 'nutrition', 'mental', 'wellness', 'meditation', 'exercise', 'sleep', 'diet', 'therapy', 'medicine'],
   philosophy: ['philosophy', 'ethics', 'stoic', 'mindset', 'psychology', 'cognitive', 'behavior', 'thinking', 'consciousness', 'moral'],
-  culture: ['culture', 'art', 'music', 'film', 'book', 'literature', 'history', 'society', 'politics', 'movie', 'podcast'],
+  culture: ['culture', 'art', 'music', 'film', 'book', 'literature', 'history', 'society', 'politics', 'movie', 'podcast', 'comedy', 'entertainment', 'humor', 'funny', 'meme', 'gaming', 'game', 'sports', 'youtube', 'show', 'series', 'tv', 'streaming', 'celebrity', 'fashion', 'food', 'travel', 'vlog'],
   productivity: ['productivity', 'habit', 'workflow', 'tools', 'focus', 'time', 'management', 'system', 'note', 'planning', 'organization'],
 };
 
@@ -119,6 +119,18 @@ const generateTags = async (item) => {
   const systemPrompt = `You are a knowledge organization assistant. Analyze the given content and return ONLY a JSON object with exactly these two keys:
 - "tags": an array of 5-8 lowercase single-word or short-phrase tags (e.g. ["machine-learning","python","tutorial"])
 - "topicCluster": exactly ONE string from: technology, design, science, business, health, philosophy, culture, productivity, general
+
+IMPORTANT CLUSTER GUIDE:
+- culture = youtube videos, comedy, entertainment, music, film, tv shows, gaming, sports, humor, podcasts, food, travel, art
+- technology = programming, ai, software, tools, web, apps
+- science = research, biology, physics, environment
+- business = startups, finance, marketing, product
+- health = fitness, nutrition, wellness, medicine
+- philosophy = ethics, psychology, mindset, thinking
+- productivity = habits, workflows, planning, time management
+- design = ux/ui, visual design, css, branding
+- general = only if none of the above fit
+
 Respond ONLY with valid JSON. No markdown, no explanation.`;
 
   const userPrompt = `Title: ${item.title || ''}

@@ -5,6 +5,7 @@ import ItemCard from '../components/dashboard/ItemCard';
 import { useItems } from '../context/ItemsContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { formatRelative } from '../utils/helpers';
 import './Dashboard.scss';
 
 const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line' };
@@ -22,6 +23,19 @@ export default function Dashboard() {
     api.get('/tags').then(r => setTags(r.data.data.slice(0, 14))).catch(() => {});
     api.get('/notes').then(r => setRecentNotes(r.data.data.slice(0, 4))).catch(() => {});
   }, []);
+
+  const handleDeleteNote = async (e, noteId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      try {
+        await api.delete(`/notes/${noteId}`);
+        setRecentNotes(prev => prev.filter(n => n._id !== noteId));
+      } catch (err) {
+        console.error('Failed to delete note:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (items.length) {
@@ -52,10 +66,14 @@ export default function Dashboard() {
           </div>
           <div className="dashboard-hero__stats">
             {STAT_TYPES.filter(t => stats[t]).map(type => (
-              <div key={type} className="stat-chip">
-                <i className={TYPE_ICONS[type]} />
-                <span className="stat-chip__num">{stats[type]}</span>
-                <span className="stat-chip__label">{type}s</span>
+              <div key={type} className={`stat-chip stat-chip--${type}`}>
+                <div className="stat-chip__icon">
+                  <i className={TYPE_ICONS[type]} />
+                </div>
+                <div className="stat-chip__info">
+                  <span className="stat-chip__num">{stats[type]}</span>
+                  <span className="stat-chip__label">{type}s</span>
+                </div>
               </div>
             ))}
           </div>
@@ -108,15 +126,24 @@ export default function Dashboard() {
             </div>
             <div className="items-grid">
               {recentNotes.map(note => (
-                <Link key={note._id} to={`/workspace/${note.workspace}`} style={{ borderRadius: 14, overflow: 'hidden', background: 'var(--card)', border: '1px solid var(--border)', padding: '1rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
-                    <i className="ri-sticky-note-line" />
-                    <span>Note</span>
+                <Link key={note._id} to={`/workspace/${note.workspace?._id || note.workspace}`} className="item-card animate-fade" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
+                  <div className="card-body" style={{ padding: '20px 16px' }}>
+                    <h3 className="card-body__title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem' }}>
+                      <i className="ri-sticky-note-line" style={{ color: 'var(--type-note)' }} />
+                      {note.title || 'Untitled Note'}
+                    </h3>
                   </div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{note.title || 'Untitled Note'}</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {note.content?.replace(/<[^>]*>?/gm, '') || 'No content...'}
-                  </p>
+                  
+                  <div className="card-footer" style={{ marginTop: 'auto' }}>
+                    <span className="card-footer__time">
+                      {note.createdAt ? formatRelative(note.createdAt) : 'Just now'}
+                    </span>
+                    <div className="card-actions" onClick={e => e.stopPropagation()}>
+                      <button className="card-btn" onClick={(e) => { e.preventDefault(); handleDeleteNote(e, note._id); }} title="Delete Note">
+                        <i className="ri-delete-bin-line" />
+                      </button>
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>

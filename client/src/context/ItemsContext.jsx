@@ -37,6 +37,12 @@ export const ItemsProvider = ({ children }) => {
     return res.data.data;
   }, []);
 
+  // Patch item in local state only (used after reanalyze — data already fresh from server)
+  const patchItem = useCallback((id, freshData) => {
+    setItems(prev => prev.map(i => i._id === id ? { ...i, ...freshData } : i));
+  }, []);
+
+
   const deleteItem = useCallback(async (id) => {
     await api.delete(`/items/${id}`);
     setItems(prev => prev.filter(i => i._id !== id));
@@ -53,7 +59,7 @@ export const ItemsProvider = ({ children }) => {
   }, []);
 
   return (
-    <ItemsContext.Provider value={{ items, loading, pagination, filters, fetchItems, createItem, updateItem, deleteItem, toggleFavorite, applyFilters }}>
+    <ItemsContext.Provider value={{ items, loading, pagination, filters, fetchItems, createItem, updateItem, patchItem, deleteItem, toggleFavorite, applyFilters }}>
       {children}
     </ItemsContext.Provider>
   );

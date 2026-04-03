@@ -46,14 +46,15 @@ export default function WorkspaceDetail() {
     setIsCreating(false);
   };
 
+  const [confirmDeleteNote, setConfirmDeleteNote] = useState(null); // holds noteId to confirm
+
   const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Are you sure you want to delete this note?')) return;
+    if (confirmDeleteNote !== noteId) { setConfirmDeleteNote(noteId); return; }
+    setConfirmDeleteNote(null);
     try {
       await api.delete(`/notes/${noteId}`);
       setNotes(prev => prev.filter(n => n._id !== noteId));
-      if (activeNote?._id === noteId) {
-        setActiveNote(null);
-      }
+      if (activeNote?._id === noteId) setActiveNote(null);
       toast.success('Note deleted');
     } catch (e) {
       toast.error('Failed to delete note');
@@ -135,15 +136,30 @@ export default function WorkspaceDetail() {
                 <div style={{ fontWeight: 500, color: 'var(--foreground)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {note.title || 'Untitled'}
                 </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteNote(note._id); }}
-                  style={{ position: 'absolute', top: 8, right: 8, padding: 4, background: 'transparent', border: 'none', color: 'var(--muted-foreground)', cursor: 'pointer', borderRadius: '4px' }}
-                  title="Delete Note"
-                  onMouseOver={e => e.currentTarget.style.color = '#ef4444'}
-                  onMouseOut={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
-                >
-                  <i className="ri-delete-bin-line" />
-                </button>
+                <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 2 }}>
+                  {confirmDeleteNote === note._id ? (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteNote(note._id); }}
+                        style={{ padding: '2px 6px', background: '#ef4444', border: 'none', color: 'white', cursor: 'pointer', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}
+                      >✓</button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteNote(null); }}
+                        style={{ padding: '2px 6px', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', cursor: 'pointer', borderRadius: '4px', fontSize: '0.7rem' }}
+                      >✕</button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteNote(note._id); }}
+                      style={{ padding: 4, background: 'transparent', border: 'none', color: 'var(--muted-foreground)', cursor: 'pointer', borderRadius: '4px' }}
+                      title="Delete Note"
+                      onMouseOver={e => e.currentTarget.style.color = '#ef4444'}
+                      onMouseOut={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
+                    >
+                      <i className="ri-delete-bin-line" />
+                    </button>
+                  )}
+                </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 4 }}>
                   {new Date(note.updatedAt).toLocaleDateString()}
                 </div>

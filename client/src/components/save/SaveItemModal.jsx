@@ -1,5 +1,6 @@
 import './SaveItemModal.scss';
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useItems } from '../../context/ItemsContext';
 import api from '../../services/api';
 
@@ -15,11 +16,14 @@ const TYPES = [
 
 export default function SaveItemModal({ onClose }) {
   const { createItem } = useItems();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ title:'', url:'', description:'', type:'article', tags:'', content:'' });
   const [collections, setCollections] = useState([]);
   const [selectedCols, setSelectedCols] = useState([]);
   const [suggestedTags, setSuggestedTags] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null); // { url, thumbnail, name }
 
   useEffect(() => {
     api.get('/collections').then(r => setCollections(r.data.data)).catch(() => {});
@@ -33,6 +37,23 @@ export default function SaveItemModal({ onClose }) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setUploadedFile({ url: res.data.url, thumbnail: res.data.thumbnail, name: file.name });
+      setForm(f => ({ ...f, url: res.data.url, thumbnail: res.data.thumbnail, title: f.title || file.name }));
+    } catch (err) {
+      alert('Upload failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,6 +107,41 @@ export default function SaveItemModal({ onClose }) {
               <label className="modal-label">URL</label>
               <input className="modal-input" type="url" placeholder="https://…" value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} />
             </div>
+
+            {/* Image Upload */}
+            {form.type === 'image' && (
+              <div>
+                <label className="modal-label">Upload Image</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: '1.5px dashed var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.9rem', background: 'var(--background)' }}>
+                  <i className={uploading ? 'ri-loader-4-line spin' : 'ri-image-add-line'} style={{ fontSize: '1.3rem' }} />
+                  {uploading ? 'Uploading…' : uploadedFile ? uploadedFile.name : 'Click to upload image (jpg, png, webp, gif)'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+                </label>
+                {uploadedFile && (
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img src={uploadedFile.thumbnail} alt="preview" style={{ width: 60, height: 45, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }} />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>✓ Uploaded successfully</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PDF Upload */}
+            {form.type === 'pdf' && (
+              <div>
+                <label className="modal-label">Upload PDF</label>
+                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '20px', border: '1.5px dashed var(--border)', borderRadius: '10px', cursor: 'pointer', background: 'var(--background)', transition: 'border-color 0.2s' }}>
+                  <i className={uploading ? 'ri-loader-4-line spin' : 'ri-file-pdf-2-line'} style={{ fontSize: '2.5rem', color: uploadedFile ? 'var(--accent)' : '#e74c3c' }} />
+                  <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)' }}>
+                    {uploading ? 'Uploading PDF…' : uploadedFile ? uploadedFile.name : 'Add PDF'}
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                    {uploading ? 'Please wait…' : uploadedFile ? '✓ Uploaded to ImageKit CDN' : 'Click to browse or drop a PDF file (max 10MB)'}
+                  </span>
+                  <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={handleFileUpload} />
+                </label>
+              </div>
+            )}
             <div>
               <label className="modal-label">Notes</label>
               <textarea className="modal-input modal-input--ta" placeholder="Brief notes or summary…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} />

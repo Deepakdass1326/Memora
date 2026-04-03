@@ -13,8 +13,9 @@ const searchRoutes = require('./routes/search.routes');
 const tagRoutes = require('./routes/tag.routes');
 const resurfaceRoutes = require('./routes/resurface.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
-const noteRoutes = require('./routes/note.routes');
-const aiRoutes = require('./routes/ai.routes');
+const noteRoutes     = require('./routes/note.routes');
+const aiRoutes       = require('./routes/ai.routes');
+const uploadRoutes   = require('./routes/upload.routes');
 
 const app = express();
 
@@ -66,8 +67,9 @@ app.use('/api/search', searchRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/resurface', resurfaceRoutes);
 app.use('/api/workspaces', workspaceRoutes);
-app.use('/api/notes', noteRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/notes',      noteRoutes);
+app.use('/api/ai',         aiRoutes);
+app.use('/api/upload',     uploadRoutes);
 
 // Health check — also confirms CORS is working if reachable from frontend
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '2.0.0', timestamp: new Date() }));

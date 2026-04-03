@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   getItems, createItem, getItem, updateItem, deleteItem,
-  toggleFavorite, addHighlight, deleteHighlight, getGraphData,
+  toggleFavorite, addHighlight, deleteHighlight, getGraphData, reanalyzeItem,
 } = require('../controllers/item.controller');
 const { protect } = require('../middleware/auth.middleware');
 
@@ -12,6 +12,7 @@ router.get('/graph', getGraphData);
 router.route('/').get(getItems).post(createItem);
 router.route('/:id').get(getItem).put(updateItem).delete(deleteItem);
 router.patch('/:id/favorite', toggleFavorite);
+router.post('/:id/reanalyze', reanalyzeItem);
 router.post('/:id/highlights', addHighlight);
 router.delete('/:id/highlights/:highlightId', deleteHighlight);
 

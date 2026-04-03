@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@imagekit/nodejs": "^7.3.0",
     "@langchain/google-genai": "^2.1.26",
     "@mistralai/mistralai": "^2.1.2",
     "axios": "^1.14.0",
@@ -24,6 +25,7 @@
     "express-rate-limit": "^8.3.2",
     "express-validator": "^7.0.1",
     "googlethis": "^1.8.0",
+    "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^1.2.39",
     "mongoose": "^7.6.3",

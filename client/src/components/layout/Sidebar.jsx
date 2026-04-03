@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useWorkspaces } from '../../context/WorkspacesContext';
@@ -124,8 +124,16 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const { theme, toggleTheme } = useTheme();
   const { workspaces } = useWorkspaces();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'M';
+
+  // Manual active check for query-param links
+  const isTypeActive = (to) => {
+    const [path, search] = to.split('?');
+    return location.pathname === path && location.search === `?${search}`;
+  };
+  const isWorkspaceActive = (to) => location.pathname === to;
 
   return (
     <>
@@ -141,22 +149,41 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
         {/* Nav */}
         <nav className="sidebar-nav">
-          {NAV.map(item => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `sidebar-nav-item${isActive ? ' active' : ''}`}>
-              <i className={item.icon} />
-              {!collapsed && <span>{item.label}</span>}
-            </NavLink>
-          ))}
+          {NAV.map(item => {
+            // Library: only active when on /library with NO type/tag filter
+            const isLibraryActive = item.to === '/library'
+              ? location.pathname === '/library' && !location.search
+              : undefined;
+
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={item.to === '/library'
+                  ? `sidebar-nav-item${isLibraryActive ? ' active' : ''}`
+                  : ({ isActive }) => `sidebar-nav-item${isActive ? ' active' : ''}`
+                }
+              >
+                <i className={item.icon} />
+                {!collapsed && <span>{item.label}</span>}
+              </NavLink>
+            );
+          })}
 
           {!collapsed && (
             <>
               <div className="sidebar-divider" />
               <p className="sidebar-section-label">Types</p>
               {TYPES.map(t => (
-                <NavLink key={t.to} to={t.to} className={({ isActive }) => `sidebar-type-item${isActive ? ' active' : ''}`}>
+                <Link
+                  key={t.to}
+                  to={t.to}
+                  className={isTypeActive(t.to) ? 'sidebar-type-item active' : 'sidebar-type-item'}
+                >
                   <i className={t.icon} />
                   <span>{t.label}</span>
-                </NavLink>
+                </Link>
               ))}
 
               <div className="sidebar-divider" />
@@ -173,10 +200,14 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               </div>
               <div style={{ marginTop: '8px' }}>
                 {workspaces && workspaces.slice(0, 8).map(ws => (
-                  <NavLink key={ws._id} to={`/workspace/${ws._id}`} className={({ isActive }) => `sidebar-type-item${isActive ? ' active' : ''}`}>
+                  <Link
+                    key={ws._id}
+                    to={`/workspace/${ws._id}`}
+                    className={isWorkspaceActive(`/workspace/${ws._id}`) ? 'sidebar-type-item active' : 'sidebar-type-item'}
+                  >
                     <i className="ri-layout-grid-line" />
                     <span>{ws.name}</span>
-                  </NavLink>
+                  </Link>
                 ))}
                 {workspaces?.length === 0 && (
                   <div style={{ fontSize: '0.75rem', padding: '4px 12px', color: 'var(--text-tertiary)' }}>No workspaces yet</div>

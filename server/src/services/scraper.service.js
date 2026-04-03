@@ -6,7 +6,46 @@ const cheerio = require('cheerio');
  * Fetches a URL and extracts OpenGraph metadata + body content for AI tagging.
  */
 
+// ── YouTube helper ─────────────────────────────────────────
+const getYouTubeVideoId = (url) => {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1);
+  } catch {}
+  return null;
+};
+
+const scrapeYouTube = async (url) => {
+  const videoId = getYouTubeVideoId(url);
+  if (!videoId) return null;
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const { data } = await axios.get(oembedUrl, { timeout: 6000 });
+    return {
+      title: data.title || '',
+      description: `YouTube video by ${data.author_name || 'Unknown'}. ${data.title || ''}`,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+      author: data.author_name || '',
+      source: 'youtube.com',
+      publishedAt: null,
+      content: `YouTube video: ${data.title}. Channel: ${data.author_name}.`,
+      scraped: true,
+    };
+  } catch (err) {
+    console.warn('[Scraper] YouTube oEmbed failed:', err.message);
+    return null;
+  }
+};
+// ───────────────────────────────────────────────────────────
+
 const scrapeUrl = async (url) => {
+  // Try YouTube-specific extraction first
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const ytResult = await scrapeYouTube(url);
+    if (ytResult) return ytResult;
+  }
+
   try {
     const response = await axios.get(url, {
       timeout: 8000,

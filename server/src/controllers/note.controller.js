@@ -77,7 +77,9 @@ exports.getNotes = async (req, res) => {
       query.workspace = req.query.workspace;
     }
     
-    const notes = await Note.find(query).sort('-updatedAt');
+    const notes = await Note.find(query)
+      .sort('-updatedAt')
+      .populate('workspace', 'name');
     res.status(200).json({ success: true, data: notes });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server Error' });

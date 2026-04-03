@@ -1,6 +1,7 @@
 const Item = require('../models/Item.model');
 const Collection = require('../models/Collection.model');
 const User = require('../models/User.model');
+const Note = require('../models/Note.model');
 const { generateTags, findRelatedItems } = require('../services/aiTagging.service');
 const { scrapeUrl } = require('../services/scraper.service');
 const { generateEmbedding, buildItemText } = require('../services/embedding.service');
@@ -40,8 +41,10 @@ const createItem = async (req, res) => {
     const { title, description, url, type, content, thumbnail, source, author, tags: manualTags, collections } = req.body;
 
     // ── 1. Auto-scrape URL metadata if URL provided ──────────────────────
+    // Skip scraping for uploaded files (pdf/image) — URL is already an ImageKit CDN link
     let scraped = null;
-    if (url) {
+    const isUploadedFile = type === 'pdf' || type === 'image';
+    if (url && !isUploadedFile) {
       scraped = await scrapeUrl(url);
     }
 
@@ -172,6 +175,49 @@ const deleteItem = async (req, res) => {
   }
 };
 
+// @desc  Re-analyze item with AI (fix stale topicCluster/tags)
+// @route POST /api/items/:id/reanalyze
+const reanalyzeItem = async (req, res) => {
+  try {
+    const item = await Item.findOne({ _id: req.params.id, user: req.user._id });
+    if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+
+    // Re-scrape YouTube if needed
+    let content = item.content || '';
+    let description = item.description || '';
+    let thumbnail = item.thumbnail || '';
+    if (item.url && (item.url.includes('youtube.com') || item.url.includes('youtu.be'))) {
+      const { scrapeUrl } = require('../services/scraper.service');
+      const scraped = await scrapeUrl(item.url);
+      if (scraped) {
+        content = scraped.content || content;
+        description = scraped.description || description;
+        thumbnail = scraped.thumbnail || thumbnail;
+      }
+    }
+
+    const { tags: aiTags, topicCluster } = await generateTags({
+      title: item.title,
+      description,
+      content,
+      type: item.type,
+      source: item.source,
+    });
+
+    const updated = await Item.findByIdAndUpdate(
+      item._id,
+      { tags: aiTags, topicCluster, description, thumbnail },
+      { new: true }
+    ).populate('collections', 'name emoji color');
+
+    console.log(`[Reanalyze] Item ${item._id} → cluster: ${topicCluster}, tags: ${aiTags.join(', ')}`);
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
 // @desc  Toggle favorite
 // @route PATCH /api/items/:id/favorite
 const toggleFavorite = async (req, res) => {
@@ -223,58 +269,78 @@ const deleteHighlight = async (req, res) => {
 // @route GET /api/items/graph
 const getGraphData = async (req, res) => {
   try {
-    const items = await Item.find({ user: req.user._id, isArchived: false })
-      .select('_id title type tags topicCluster relatedItems thumbnail')
-      .limit(100);
+    const [items, notes] = await Promise.all([
+      Item.find({ user: req.user._id, isArchived: false })
+        .select('_id title type tags topicCluster relatedItems thumbnail')
+        .limit(100),
+      Note.find({ user: req.user._id })
+        .select('_id title tags topicCluster workspace')
+        .populate('workspace', 'name')
+        .limit(50),
+    ]);
 
-    const nodes = items.map(item => ({
+    // Build combined nodes — items + workspace notes
+    const itemNodes = items.map(item => ({
       id: item._id,
       label: item.title.substring(0, 40) + (item.title.length > 40 ? '...' : ''),
       type: item.type,
-      cluster: item.topicCluster,
+      cluster: item.topicCluster || 'general',
       tags: item.tags,
       thumbnail: item.thumbnail,
+      source: 'item',
     }));
+
+    const noteNodes = notes.map(note => ({
+      id: note._id,
+      label: (note.title || 'Untitled Note').substring(0, 40),
+      type: 'note',
+      cluster: note.topicCluster || 'general',
+      tags: note.tags || [],
+      thumbnail: null,
+      source: 'note',
+      workspaceName: note.workspace?.name,
+    }));
+
+    const nodes = [...itemNodes, ...noteNodes];
+    const allEntities = [
+      ...items.map(i => ({ id: i._id, tags: i.tags, relatedItems: i.relatedItems })),
+      ...notes.map(n => ({ id: n._id, tags: n.tags || [], relatedItems: [] })),
+    ];
 
     const links = [];
     const nodeIds = new Set(nodes.map(n => String(n.id)));
 
-    items.forEach(item => {
-      // 1. Explicit related items from the semantic AI
-      item.relatedItems.forEach(relId => {
-        if (!nodeIds.has(relId.toString())) return; // Prevent D3 crash
-
+    allEntities.forEach(entity => {
+      // 1. Explicit related items
+      (entity.relatedItems || []).forEach(relId => {
+        if (!nodeIds.has(relId.toString())) return;
         const exists = links.some(l =>
-          (l.source === item._id.toString() && l.target === relId.toString()) ||
-          (l.source === relId.toString() && l.target === item._id.toString())
+          (l.source === entity.id.toString() && l.target === relId.toString()) ||
+          (l.source === relId.toString() && l.target === entity.id.toString())
         );
-        if (!exists) {
-          links.push({ source: item._id.toString(), target: relId.toString() });
-        }
+        if (!exists) links.push({ source: entity.id.toString(), target: relId.toString() });
       });
 
-      // 2. Implicit relations (nodes that share identical tags)
-      items.forEach(otherItem => {
-        if (item._id.toString() === otherItem._id.toString()) return;
-        const sharedTags = item.tags.filter(t => otherItem.tags.includes(t));
+      // 2. Shared tags links (across items AND notes)
+      allEntities.forEach(other => {
+        if (entity.id.toString() === other.id.toString()) return;
+        const sharedTags = entity.tags.filter(t => (other.tags || []).includes(t));
         if (sharedTags.length > 0) {
           const exists = links.some(l =>
-            (l.source === item._id.toString() && l.target === otherItem._id.toString()) ||
-            (l.source === otherItem._id.toString() && l.target === item._id.toString())
+            (l.source === entity.id.toString() && l.target === other.id.toString()) ||
+            (l.source === other.id.toString() && l.target === entity.id.toString())
           );
-          if (!exists) {
-            links.push({ source: item._id.toString(), target: otherItem._id.toString() });
-          }
+          if (!exists) links.push({ source: entity.id.toString(), target: other.id.toString() });
         }
       });
     });
 
-    // Tag-based cluster map
+    // Tag-based cluster map (all entities)
     const tagMap = {};
-    items.forEach(item => {
-      item.tags.forEach(tag => {
+    allEntities.forEach(entity => {
+      (entity.tags || []).forEach(tag => {
         if (!tagMap[tag]) tagMap[tag] = [];
-        tagMap[tag].push(item._id.toString());
+        tagMap[tag].push(entity.id.toString());
       });
     });
 
@@ -284,4 +350,5 @@ const getGraphData = async (req, res) => {
   }
 };
 
-module.exports = { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, deleteHighlight, getGraphData };
+module.exports = { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, deleteHighlight, getGraphData, reanalyzeItem };
+

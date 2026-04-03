@@ -17,14 +17,17 @@
 |---|---|
 | **Save Anything** | Articles, tweets, videos, images, PDFs, notes, links |
 | **AI Tagging** | Multi-LLM semantic tag generation (Gemini + Mistral + Cohere) |
+| **YouTube Support** | Auto-fetches title, channel, thumbnail via oEmbed — no scraping needed |
+| **AI Re-analyze** | Re-run AI tagging on any existing item to fix stale clusters/tags |
 | **Semantic Search** | AI-powered search using Google Gemini embeddings |
 | **Internet Search** | Live web results from YouTube, Dev.to, and Wikipedia alongside saved items |
 | **Search History** | Clickable recent searches with delete support |
-| **Topic Clustering** | Groups items into knowledge domains (tech, design, health, etc.) |
+| **Topic Clustering** | Groups items into knowledge domains (tech, design, culture, health, etc.) |
 | **Knowledge Graph** | D3.js interactive visualization of how items connect |
 | **Memory Resurface** | "2 months ago you saved this..." rediscovery engine |
 | **Collections** | Curated folders with emoji + color |
 | **Workspaces & Notes** | Create workspaces with rich markdown notes |
+| **Dashboard Note Cards** | Workspace notes on dashboard with date, delete button, and consistent card design |
 | **Related Items** | Automatic cross-linking of related knowledge |
 | **Chrome Extension** | One-click save from any webpage |
 | **Secure Auth** | httpOnly cookie-based JWT auth (XSS-proof) |
@@ -39,11 +42,11 @@ memora/
 │   └── src/
 │       ├── components/
 │       │   ├── layout/        # Sidebar, Header
-│       │   ├── dashboard/     # ItemCard
+│       │   ├── dashboard/     # ItemCard (with Re-analyze)
 │       │   ├── graph/         # D3 KnowledgeGraph
 │       │   ├── notes/         # NoteEditor
 │       │   └── save/          # SaveItemModal
-│       ├── context/           # AuthContext
+│       ├── context/           # AuthContext, ItemsContext (patchItem)
 │       ├── pages/             # Dashboard, Library, Search, Resurface, Workspace
 │       ├── services/          # Axios API client (withCredentials)
 │       └── utils/             # helpers
@@ -51,16 +54,20 @@ memora/
 ├── server/                    # Express + MongoDB backend (deployed on Render)
 │   └── src/
 │       ├── config/            # database.js
-│       ├── controllers/       # auth, item, note, workspace
+│       ├── controllers/       # auth, item (+ reanalyze), note, workspace
 │       ├── middleware/        # auth.middleware.js (cookie-based)
 │       ├── models/            # User, Item, Collection, Note, Workspace
 │       ├── routes/            # REST API routes
-│       └── services/          # aiTagging, aiRouter, embedding
+│       └── services/          # aiTagging, aiRouter, embedding, scraper (YouTube oEmbed)
 │
-└── extension/                 # Chrome Extension
-    ├── manifest.json
-    ├── popup.html / popup.js
-    └── background.js
+├── extension/                 # Chrome Extension
+│   ├── manifest.json
+│   ├── popup.html / popup.js
+│   └── background.js
+│
+├── ARCHITECTURE.md            # System architecture deep-dive
+├── DEPLOYMENT.md              # Full deployment guide (Render + Vercel)
+└── SCALE_UP.md                # Scale-up plan: Pinecone, BullMQ, ImageKit
 ```
 
 ---
@@ -109,6 +116,21 @@ Memora uses a **multi-LLM routing system** to distribute AI load and avoid rate 
 
 If a model's API key is missing, it is automatically skipped.
 
+### YouTube Smart Scraping
+YouTube blocks generic scrapers. Memora detects YouTube URLs and uses the **oEmbed API** to reliably fetch the video title, channel name, and high-quality thumbnail automatically.
+
+### Topic Cluster Guide
+| Cluster | Content Types |
+|---|---|
+| `culture` | YouTube, comedy, music, film, TV, gaming, sports, food, travel |
+| `technology` | Programming, AI, software, tools, web, apps |
+| `science` | Research, biology, physics, environment |
+| `business` | Startups, finance, marketing, product |
+| `health` | Fitness, nutrition, wellness, medicine |
+| `philosophy` | Ethics, psychology, mindset, thinking |
+| `productivity` | Habits, workflows, planning, time management |
+| `design` | UX/UI, visual design, CSS, branding |
+
 ---
 
 ## 🔒 Security
@@ -138,6 +160,8 @@ If a model's API key is missing, it is automatically skipped.
 | GET | `/api/items/graph` | Knowledge graph data |
 | PUT | `/api/items/:id` | Update item |
 | DELETE | `/api/items/:id` | Delete item |
+| PATCH | `/api/items/:id/favorite` | Toggle favorite |
+| POST | `/api/items/:id/reanalyze` | Re-run AI tagging + re-scrape YouTube |
 
 ### Search
 | Method | Endpoint | Description |
@@ -154,6 +178,7 @@ If a model's API key is missing, it is automatically skipped.
 | GET | `/api/collections` | User collections |
 | GET | `/api/workspaces` | Workspaces |
 | GET | `/api/notes?workspace=` | Notes in a workspace |
+| DELETE | `/api/notes/:id` | Delete a note |
 
 ---
 
@@ -171,13 +196,22 @@ If a model's API key is missing, it is automatically skipped.
 - MongoDB Atlas + Mongoose
 - `httpOnly` cookie auth via `cookie-parser`
 - `@google/generative-ai` + LangChain — Gemini embeddings & tagging
-- `youtube-search-api`, `axios` — live internet search
+- YouTube oEmbed API — reliable video metadata extraction
 - Deployed on **Render**
 
 **Chrome Extension**
 - Manifest V3
 - Content script + background service worker
 - Communicates with live Render backend via cookies
+
+---
+
+## 📈 Scale-Up Plan
+
+See [SCALE_UP.md](./SCALE_UP.md) for the full plan covering:
+- **ImageKit** — CDN file uploads (partially implemented: `storage.service.js` done)
+- **Pinecone** — Production vector database for fast semantic search at scale
+- **BullMQ + Redis** — Background queue for async AI processing
 
 ---
 
@@ -189,4 +223,4 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full step-by-step deployment guide 
 
 ## 📄 License
 
-MIT © 2025 Memora
+MIT © 2026 Memora

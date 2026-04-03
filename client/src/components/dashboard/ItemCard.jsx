@@ -3,21 +3,43 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useItems } from '../../context/ItemsContext';
 import { formatRelative, getTypeColor, getClusterColor, getDomain } from '../../utils/helpers.jsx';
+import api from '../../services/api';
 
 const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line', link:'ri-link' };
 
 export default function ItemCard({ item, onOpen }) {
-  const { toggleFavorite, deleteItem } = useItems();
+  const { toggleFavorite, deleteItem, patchItem } = useItems();
   const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
+
+  const handleReanalyze = async (e) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    setReanalyzing(true);
+    try {
+      const res = await api.post(`/items/${item._id}/reanalyze`);
+      if (res.data.success) {
+        patchItem(item._id, res.data.data);
+      }
+    } catch (err) {
+      console.error('Reanalyze failed:', err);
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   const handleClick = () => { if (onOpen) onOpen(item); else navigate(`/item/${item._id}`); };
   const handleFav   = (e) => { e.stopPropagation(); toggleFavorite(item._id); };
   const handleDelete = (e) => {
-    e.stopPropagation(); setMenuOpen(false);
-    if (window.confirm('Delete this item?')) deleteItem(item._id);
+    e.stopPropagation();
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setMenuOpen(false); setConfirmDelete(false);
+    deleteItem(item._id);
   };
+  const handleMenuClose = () => { setMenuOpen(false); setConfirmDelete(false); };
 
   const typeColor    = getTypeColor(item.type);
   const clusterColor = getClusterColor(item.topicCluster);
@@ -44,11 +66,16 @@ export default function ItemCard({ item, onOpen }) {
 
       {/* Body */}
       <div className="card-body">
-        <div className="card-body__meta">
+      <div className="card-body__meta">
           {domain && <span className="card-body__source">{domain}</span>}
-          {item.topicCluster && (
-            <span className="card-body__cluster" style={{ color: clusterColor, background: `${clusterColor}15` }}>
+          {item.topicCluster && item.topicCluster !== 'general' && (
+            <span className="card-body__cluster" style={{ color: clusterColor, background: `${clusterColor}18` }}>
               {item.topicCluster}
+            </span>
+          )}
+          {(!item.topicCluster || item.topicCluster === 'general') && (
+            <span className="card-body__cluster" style={{ color: 'var(--muted-fg)', background: 'var(--muted)' }}>
+              {item.type || 'link'}
             </span>
           )}
         </div>
@@ -75,14 +102,29 @@ export default function ItemCard({ item, onOpen }) {
             </a>
           )}
           <div className="card-menu">
-            <button className="card-btn" onClick={e => { e.stopPropagation(); setMenuOpen(o => !o); }} title="More">
+            <button className="card-btn" onClick={e => { e.stopPropagation(); setMenuOpen(o => !o); if (menuOpen) setConfirmDelete(false); }} title="More">
               <i className="ri-more-2-line" />
             </button>
             {menuOpen && (
               <div className="card-menu__dropdown animate-scale">
-                <button className="card-menu__item card-menu__item--danger" onClick={handleDelete}>
-                  <i className="ri-delete-bin-line" />Delete
+                <button className="card-menu__item" onClick={handleReanalyze} disabled={reanalyzing}>
+                  <i className={reanalyzing ? 'ri-loader-2-line' : 'ri-sparkling-2-line'} style={reanalyzing ? { animation: 'spin 1s linear infinite' } : {}} />
+                  {reanalyzing ? 'Analyzing...' : 'Re-analyze'}
                 </button>
+                {!confirmDelete ? (
+                  <button className="card-menu__item card-menu__item--danger" onClick={handleDelete}>
+                    <i className="ri-delete-bin-line" />Delete
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: 4, padding: '4px' }}>
+                    <button className="card-menu__item card-menu__item--danger" onClick={handleDelete} style={{ flex: 1, fontSize: '0.78rem' }}>
+                      ✓ Yes, delete
+                    </button>
+                    <button className="card-menu__item" onClick={e => { e.stopPropagation(); setConfirmDelete(false); }} style={{ flex: 1, fontSize: '0.78rem' }}>
+                      ✕ Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
