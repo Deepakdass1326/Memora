@@ -3,6 +3,7 @@ const Collection = require('../models/Collection.model');
 const User = require('../models/User.model');
 const { generateTags, findRelatedItems } = require('../services/aiTagging.service');
 const { scrapeUrl } = require('../services/scraper.service');
+const { generateEmbedding, buildItemText } = require('../services/embedding.service');
 
 // @desc  Get all items for user
 // @route GET /api/items
@@ -96,6 +97,26 @@ const createItem = async (req, res) => {
       await Item.findByIdAndUpdate(item._id, { relatedItems: related });
       await Item.updateMany({ _id: { $in: related } }, { $addToSet: { relatedItems: item._id } });
     }
+
+    // ── 7. Generate & store semantic embedding (non-blocking — don't await) ──
+    //    We fire this off after responding so it never slows the save API.
+    setImmediate(async () => {
+      try {
+        const embeddingText = buildItemText({
+          title: finalTitle,
+          tags: [...new Set([...(manualTags || []), ...aiTags])],
+          description: finalDescription,
+          content: finalContent,
+        });
+        const embedding = await generateEmbedding(embeddingText, 'RETRIEVAL_DOCUMENT');
+        if (embedding) {
+          await Item.findByIdAndUpdate(item._id, { embedding });
+          console.log(`[Embedding] Stored ${embedding.length}-dim vector for item ${item._id}`);
+        }
+      } catch (e) {
+        console.warn('[Embedding] Background store failed:', e.message);
+      }
+    });
 
     const populated = await Item.findById(item._id)
       .populate('collections', 'name emoji color')

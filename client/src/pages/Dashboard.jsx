@@ -15,10 +15,12 @@ export default function Dashboard() {
   const { items, fetchItems, loading } = useItems();
   const [tags, setTags] = useState([]);
   const [stats, setStats] = useState({});
+  const [recentNotes, setRecentNotes] = useState([]);
 
   useEffect(() => {
     fetchItems({ limit: 8 });
     api.get('/tags').then(r => setTags(r.data.data.slice(0, 14))).catch(() => {});
+    api.get('/notes').then(r => setRecentNotes(r.data.data.slice(0, 4))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -94,6 +96,32 @@ export default function Dashboard() {
             </div>
           )}
         </section>
+
+        {/* Recent Notes */}
+        {recentNotes.length > 0 && (
+          <section style={{ marginBottom: 40 }}>
+            <div className="section-header">
+              <div>
+                <h2 className="section-header__title">Workspace Notes</h2>
+                <p className="section-header__sub">Your written knowledge</p>
+              </div>
+            </div>
+            <div className="items-grid">
+              {recentNotes.map(note => (
+                <Link key={note._id} to={`/workspace/${note.workspace}`} style={{ borderRadius: 14, overflow: 'hidden', background: 'var(--card)', border: '1px solid var(--border)', padding: '1rem', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+                    <i className="ri-sticky-note-line" />
+                    <span>Note</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{note.title || 'Untitled Note'}</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {note.content?.replace(/<[^>]*>?/gm, '') || 'No content...'}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Tags */}
         {tags.length > 0 && (

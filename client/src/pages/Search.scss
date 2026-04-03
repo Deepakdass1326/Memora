@@ -1,10 +1,9 @@
 @use '../styles/mixins' as m;
 
 .search-page {
-  // ── Search box ──
+  // ── Search box ──────────────────────────────────────────────────
   .search-box {
     position: relative;
-    margin-bottom: 16px;
 
     .search-icon {
       position: absolute; left: 16px; top: 50%;
@@ -14,8 +13,8 @@
     }
 
     input {
-      width: 100%; height: 56px;
-      padding: 0 100px 0 48px;
+      width: 100%; height: 58px;
+      padding: 0 100px 0 50px;
       border-radius: 16px;
       border: 1px solid var(--border);
       background: var(--card);
@@ -40,11 +39,12 @@
 
     .search-clear {
       @include m.btn-reset;
-      width: 22px; height: 22px;
-      border-radius: 50%;
+      width: 24px; height: 24px; border-radius: 50%;
       background: var(--muted); color: var(--muted-fg);
       @include m.flex(row, center, center);
-      font-size: 11px;
+      font-size: 12px;
+      @include m.transition;
+      &:hover { background: var(--border-strong); color: var(--foreground); }
     }
 
     kbd {
@@ -56,49 +56,168 @@
     }
   }
 
-  .search-count { font-size: .85rem; color: var(--muted-fg); padding: 4px; }
+  // ── Toolbar (mode toggle + backfill) ────────────────────────────
+  .search-toolbar {
+    @include m.flex(row, center, space-between, 12px);
+    flex-wrap: wrap;
+    margin-bottom: 14px;
 
-  // ── Results ──
-  .search-results { @include m.flex(column, stretch, flex-start, 10px); margin-top: 8px; }
+    .toolbar-right {
+      @include m.flex(row, center, flex-end, 10px);
+      flex-wrap: wrap;
+    }
+  }
+
+  .mode-toggle {
+    @include m.flex(row, center, flex-start, 4px);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+
+    .mode-btn {
+      @include m.btn-reset;
+      @include m.flex(row, center, center, 6px);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: .8rem; font-weight: 500;
+      color: var(--muted-fg);
+      @include m.transition;
+      i { font-size: 14px; }
+
+      &:hover { color: var(--foreground); }
+
+      &.active {
+        background: var(--card);
+        color: var(--accent);
+        box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      }
+    }
+  }
+
+  .mode-badge {
+    @include m.flex(row, center, center, 5px);
+    font-size: .72rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 99px;
+    i { font-size: 12px; }
+
+    &.semantic {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
+    }
+    &.keyword {
+      background: var(--muted);
+      color: var(--muted-fg);
+    }
+  }
+
+  .backfill-btn {
+    @include m.btn-reset;
+    @include m.flex(row, center, center, 6px);
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted-fg);
+    font-size: .78rem; font-weight: 500;
+    @include m.transition;
+    i { font-size: 14px; }
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, var(--card));
+    }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+
+  .backfill-msg {
+    font-size: .8rem;
+    color: var(--muted-fg);
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .search-count { font-size: .84rem; color: var(--muted-fg); padding: 4px; margin-bottom: 6px; }
+
+  // ── Results ─────────────────────────────────────────────────────
+  .search-results { @include m.flex(column, stretch, flex-start, 8px); }
 
   .search-result {
     @include m.flex(row, center, flex-start, 14px);
     padding: 14px 16px;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
+    text-decoration: none; color: inherit;
     @include m.transition;
 
-    &:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); .sr-open { opacity: 1; } }
-
-    .sr-type-icon { width: 40px; height: 40px; border-radius: 10px; @include m.flex(row, center, center); font-size: 18px; flex-shrink: 0; }
-    .sr-body { flex: 1; min-width: 0; }
-    .sr-title {
-      font-size: .95rem; font-weight: 500; color: var(--foreground); margin-bottom: 6px;
-      mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); border-radius: 3px; padding: 0 2px; }
+    &:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--accent);
+      transform: translateX(2px);
     }
-    .sr-meta { @include m.flex(row, center, flex-start, 8px); flex-wrap: wrap; }
-    .sr-cluster { font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; text-transform: capitalize; }
-    .sr-time    { font-size: .72rem; color: var(--muted-fg); }
-    .sr-open {
-      @include m.btn-reset;
-      opacity: 0;
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      background: var(--muted); color: var(--muted-fg);
+
+    .sr-rank {
+      font-size: .7rem; font-weight: 700;
+      color: var(--muted-fg);
+      min-width: 22px; text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sr-type-icon {
+      width: 40px; height: 40px; border-radius: 10px;
       @include m.flex(row, center, center);
-      font-size: 15px; flex-shrink: 0;
-      text-decoration: none;
-      @include m.transition;
-      &:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+      font-size: 18px; flex-shrink: 0;
+    }
+
+    .sr-body { flex: 1; min-width: 0; }
+
+    .sr-title {
+      font-size: .95rem; font-weight: 500;
+      color: var(--foreground); margin-bottom: 4px;
+      @include m.truncate;
+      mark {
+        background: color-mix(in srgb, var(--accent) 20%, transparent);
+        color: var(--accent); border-radius: 3px; padding: 0 2px;
+      }
+    }
+
+    .sr-desc {
+      font-size: .8rem; color: var(--text-secondary);
+      margin-bottom: 6px; line-height: 1.4;
+    }
+
+    .sr-meta {
+      @include m.flex(row, center, flex-start, 6px);
+      flex-wrap: wrap;
+    }
+
+    .sr-cluster {
+      font-size: .68rem; font-weight: 600;
+      padding: 2px 8px; border-radius: 99px;
+      text-transform: capitalize;
+    }
+
+    .sr-time { font-size: .72rem; color: var(--muted-fg); }
+
+    // Semantic confidence badge
+    .sr-score {
+      @include m.flex(column, flex-end, center, 2px);
+      padding: 6px 10px; border-radius: 10px;
+      border: 1px solid;
+      flex-shrink: 0; text-align: right;
+
+      .score-pct { font-size: .9rem; font-weight: 700; line-height: 1; }
+      .score-lbl { font-size: .62rem; font-weight: 500; white-space: nowrap; opacity: 0.85; }
     }
   }
 
-  // ── Search hints ──
-  .search-hints {
-    margin-top: 24px;
-    .hints-label { font-size: .85rem; font-weight: 500; color: var(--foreground); margin-bottom: 12px; }
-  }
+  // ── Search hints ─────────────────────────────────────────────────
+  .search-hints { margin-top: 24px; }
 
   .hints-grid {
     display: grid;
@@ -108,12 +227,18 @@
 
   .hint-item {
     @include m.flex(row, center, flex-start, 10px);
-    padding: 12px;
+    padding: 12px 14px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    font-size: .85rem;
-    color: var(--muted-fg);
-    i { font-size: 18px; color: var(--accent); flex-shrink: 0; }
+    font-size: .83rem; color: var(--muted-fg);
+    cursor: pointer;
+    @include m.transition;
+    i { font-size: 16px; color: var(--accent); flex-shrink: 0; }
+    &:hover {
+      border-color: var(--accent);
+      color: var(--foreground);
+      background: color-mix(in srgb, var(--accent) 4%, var(--card));
+    }
   }
 }

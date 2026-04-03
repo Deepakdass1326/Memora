@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema(
       totalItems: { type: Number, default: 0 },
       totalCollections: { type: Number, default: 0 },
     },
+    searchHistory: { type: [String], default: [] },
   },
   { timestamps: true }
 );

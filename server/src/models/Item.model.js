@@ -30,8 +30,9 @@ const itemSchema = new mongoose.Schema(
     readAt: { type: Date },
     // For knowledge graph edges
     relatedItems: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
-    // Embedding placeholder (would be vector in prod)
     topicCluster: { type: String },
+    // Semantic embedding vector (gemini-embedding-001, 3072 dims)
+    embedding: { type: [Number], select: false },
     // Resurface tracking
     lastResurfacedAt: { type: Date },
     resurfaceCount: { type: Number, default: 0 },
@@ -41,6 +42,7 @@ const itemSchema = new mongoose.Schema(
 
 // Text search index
 itemSchema.index({ title: 'text', description: 'text', content: 'text', tags: 'text' });
+itemSchema.index({ embedding: 1 }, { sparse: true }); // sparse: only documents that have embedding
 itemSchema.index({ user: 1, createdAt: -1 });
 itemSchema.index({ user: 1, type: 1 });
 itemSchema.index({ user: 1, tags: 1 });

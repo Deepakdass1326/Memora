@@ -4,6 +4,15 @@ const User = require('../models/User.model');
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET || 'memora_secret_key', { expiresIn: '30d' });
 
+const setTokenCookie = (res, token) => {
+  res.cookie('memora_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  });
+};
+
 // @desc  Register user
 // @route POST /api/auth/register
 const register = async (req, res) => {
@@ -14,7 +23,8 @@ const register = async (req, res) => {
 
     const user = await User.create({ name, email, password });
     const token = generateToken(user._id);
-    res.status(201).json({ success: true, token, user });
+    setTokenCookie(res, token);
+    res.status(201).json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -30,7 +40,8 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     const token = generateToken(user._id);
-    res.json({ success: true, token, user });
+    setTokenCookie(res, token);
+    res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -57,4 +68,15 @@ const updatePreferences = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updatePreferences };
+// @desc  Logout user
+// @route POST /api/auth/logout
+const logout = async (req, res) => {
+  res.clearCookie('memora_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+  res.json({ success: true, message: 'Logged out successfully' });
+};
+
+module.exports = { register, login, logout, getMe, updatePreferences };

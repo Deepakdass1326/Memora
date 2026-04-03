@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/database');
 
 // Route imports
@@ -11,6 +12,9 @@ const collectionRoutes = require('./routes/collection.routes');
 const searchRoutes = require('./routes/search.routes');
 const tagRoutes = require('./routes/tag.routes');
 const resurfaceRoutes = require('./routes/resurface.routes');
+const workspaceRoutes = require('./routes/workspace.routes');
+const noteRoutes = require('./routes/note.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 
@@ -54,6 +58,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use('/api', globalLimiter);
 
 // Request logging (dev)
@@ -71,6 +76,9 @@ app.use('/api/collections', collectionRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/resurface', resurfaceRoutes);
+app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/notes', noteRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

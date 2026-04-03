@@ -108,42 +108,66 @@ Type: {type}`],
 // ─── Public API ────────────────────────────────────────────────────────────
 
 /**
- * Generate tags and detect topic cluster using Gemini AI (with rule-based fallback).
+ * Generate tags and detect topic cluster.
+ * Route: Cohere (classification) → Gemini → rule-based fallback
  * @returns {{ tags: string[], topicCluster: string }}
  */
 const generateTags = async (item) => {
-  const chain = initGeminiChain();
+  const { routeRequest, HAS_COHERE } = require('./aiRouter.service');
+  const validClusters = Object.keys(TOPIC_CLUSTERS).concat(['general']);
 
-  if (chain) {
+  const systemPrompt = `You are a knowledge organization assistant. Analyze the given content and return ONLY a JSON object with exactly these two keys:
+- "tags": an array of 5-8 lowercase single-word or short-phrase tags (e.g. ["machine-learning","python","tutorial"])
+- "topicCluster": exactly ONE string from: technology, design, science, business, health, philosophy, culture, productivity, general
+Respond ONLY with valid JSON. No markdown, no explanation.`;
+
+  const userPrompt = `Title: ${item.title || ''}
+Description: ${(item.description || '').slice(0, 500)}
+Content: ${(item.content || '').slice(0, 1500)}
+Type: ${item.type || 'link'}`;
+
+  // Try Cohere → Gemini → rule-based
+  const modelsToTry = [];
+  if (HAS_COHERE)   modelsToTry.push('cohere');
+  modelsToTry.push('gemini'); // always try gemini as second option
+
+  for (const model of modelsToTry) {
     try {
-      const result = await chain.invoke({
-        title: item.title || '',
-        description: (item.description || '').slice(0, 500),
-        content: (item.content || '').slice(0, 1500),
-        type: item.type || 'link',
-      });
+      let rawText;
+      if (model === 'cohere') {
+        const { callCohere } = require('./aiRouter.service');
+        rawText = await callCohere(systemPrompt, userPrompt);
+      } else {
+        const { callGemini } = require('./aiRouter.service');
+        rawText = await callGemini(systemPrompt, userPrompt);
+      }
+
+      // Strip possible markdown fences
+      const cleaned = rawText.replace(/```json|```/g, '').trim();
+      const result = JSON.parse(cleaned);
 
       const tags = Array.isArray(result.tags)
         ? result.tags.map(t => String(t).toLowerCase().trim()).filter(Boolean).slice(0, 8)
         : generateTagsRuleBased(item);
 
-      const validClusters = Object.keys(TOPIC_CLUSTERS).concat(['general']);
       const topicCluster = validClusters.includes(result.topicCluster)
         ? result.topicCluster
         : detectTopicClusterRuleBased(tags, item.title, item.description);
 
-      console.log('[AI Tagging] Gemini tags generated:', tags, '| Cluster:', topicCluster);
+      console.log(`[AI Tagging] ${model} tags:`, tags, '| Cluster:', topicCluster);
       return { tags, topicCluster };
     } catch (err) {
-      console.warn('[AI Tagging] Gemini call failed, falling back to rule-based:', err.message);
+      console.warn(`[AI Tagging] ${model} failed:`, err.message);
     }
   }
 
-  // Rule-based fallback
+  // Final fallback: rule-based
+  console.log('[AI Tagging] Using rule-based fallback');
   const tags = generateTagsRuleBased(item);
   const topicCluster = detectTopicClusterRuleBased(tags, item.title, item.description);
   return { tags, topicCluster };
 };
+
 
 /**
  * Find related items based on shared tags and topic cluster.

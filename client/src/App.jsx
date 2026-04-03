@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ItemsProvider } from './context/ItemsContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { WorkspacesProvider } from './context/WorkspacesContext';
 import Sidebar from './components/layout/Sidebar';
 import { cn } from './lib/utils';
 
@@ -15,6 +16,7 @@ import GraphPage from './pages/GraphPage';
 import Search from './pages/Search';
 import Resurface from './pages/Resurface';
 import ItemDetail from './pages/ItemDetail';
+import WorkspaceDetail from './pages/WorkspaceDetail';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -56,44 +58,65 @@ function AppRoutes() {
       <Route path="/login" element={<AuthPage />} />
       <Route path="/" element={
         <ProtectedRoute>
-          <ItemsProvider>
-            <AppShell><Dashboard /></AppShell>
-          </ItemsProvider>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><Dashboard /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
         </ProtectedRoute>
       } />
       <Route path="/library" element={
         <ProtectedRoute>
-          <ItemsProvider>
-            <AppShell><Library /></AppShell>
-          </ItemsProvider>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><Library /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
         </ProtectedRoute>
       } />
       <Route path="/graph" element={
         <ProtectedRoute>
-          <ItemsProvider>
-            <AppShell><GraphPage /></AppShell>
-          </ItemsProvider>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><GraphPage /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
         </ProtectedRoute>
       } />
       <Route path="/search" element={
         <ProtectedRoute>
-          <ItemsProvider>
-            <AppShell><Search /></AppShell>
-          </ItemsProvider>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><Search /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
         </ProtectedRoute>
       } />
       <Route path="/resurface" element={
         <ProtectedRoute>
-          <ItemsProvider>
-            <AppShell><Resurface /></AppShell>
-          </ItemsProvider>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><Resurface /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
         </ProtectedRoute>
       } />
       <Route path="/item/:id" element={
         <ProtectedRoute>
-          <ItemsProvider>
-            <AppShell><ItemDetail /></AppShell>
-          </ItemsProvider>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><ItemDetail /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/workspace/:id" element={
+        <ProtectedRoute>
+          <WorkspacesProvider>
+            <ItemsProvider>
+              <AppShell><WorkspaceDetail /></AppShell>
+            </ItemsProvider>
+          </WorkspacesProvider>
         </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
