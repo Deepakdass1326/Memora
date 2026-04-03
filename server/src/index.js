@@ -37,20 +37,20 @@ const authLimiter = rateLimit({
 });
 
 // Middleware
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
 app.use(cors({
   origin: (origin, callback) => {
+    const clientUrl = (process.env.CLIENT_URL || '').replace(/\/$/, '');
     if (
       !origin || 
-      allowedOrigins.includes(origin) || 
-      origin.startsWith('chrome-extension://') // Allow extension requests
+      origin === clientUrl ||
+      origin === 'http://localhost:5173' ||
+      origin === 'http://localhost:3000' ||
+      origin.startsWith('chrome-extension://') ||
+      process.env.NODE_ENV !== 'production' // Allow dynamic testing in dev
     ) {
       callback(null, true);
     } else {
+      console.error(`CORS Blocked: Origin ${origin} not allowed. Expected: ${clientUrl}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
