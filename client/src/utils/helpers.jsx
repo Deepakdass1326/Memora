@@ -22,6 +22,7 @@ export const getTypeIcon = (type) => {
   const icons = {
     article: '📄', tweet: '𝕏', image: '🖼️',
     video: '▶️', pdf: '📕', note: '📝', link: '🔗',
+    product: '🛒',
   };
   return icons[type] || '🔗';
 };
@@ -29,27 +30,37 @@ export const getTypeIcon = (type) => {
 export const getTypeColor = (type) => {
   const map = {
     article: 'var(--type-article)',
-    tweet: 'var(--type-tweet)',
-    image: 'var(--type-image)',
-    video: 'var(--type-video)',
-    pdf: 'var(--type-pdf)',
-    note: 'var(--type-note)',
-    link: 'var(--type-link)',
+    tweet:   'var(--type-tweet)',
+    image:   'var(--type-image)',
+    video:   'var(--type-video)',
+    pdf:     'var(--type-pdf)',
+    note:    'var(--type-note)',
+    link:    'var(--type-link)',
+    product: 'var(--type-product)',
   };
   return map[type] || 'var(--text-tertiary)';
 };
 
 export const getClusterColor = (cluster) => {
   const map = {
-    technology: 'var(--cluster-technology)',
-    design: 'var(--cluster-design)',
-    science: 'var(--cluster-science)',
-    business: 'var(--cluster-business)',
-    health: 'var(--cluster-health)',
-    philosophy: 'var(--cluster-philosophy)',
-    culture: 'var(--cluster-culture)',
+    technology:   'var(--cluster-technology)',
+    design:       'var(--cluster-design)',
+    science:      'var(--cluster-science)',
+    business:     'var(--cluster-business)',
+    health:       'var(--cluster-health)',
+    philosophy:   'var(--cluster-philosophy)',
+    culture:      'var(--cluster-culture)',
     productivity: 'var(--cluster-productivity)',
-    general: 'var(--cluster-general)',
+    general:      'var(--cluster-general)',
+    // Product / wishlist clusters
+    electronics:  'var(--cluster-technology)',
+    fashion:      'var(--cluster-culture)',
+    home:         'var(--cluster-productivity)',
+    sports:       'var(--cluster-health)',
+    books:        'var(--cluster-philosophy)',
+    beauty:       'var(--cluster-culture)',
+    food:         'var(--cluster-science)',
+    other:        'var(--cluster-general)',
   };
   return map[cluster] || 'var(--cluster-general)';
 };

@@ -4,76 +4,116 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Memora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <div class="popup-shell">
+  <div class="shell">
 
     <!-- Header -->
-    <div class="popup-header">
+    <header class="header">
       <div class="logo">
-        <span class="logo-icon">◈</span>
-        <span class="logo-text">memora</span>
+        <span class="logo-mark">◈</span>
+        <span class="logo-name">memora</span>
       </div>
-      <div id="auth-status" class="auth-status"></div>
-    </div>
+      <div id="auth-status" class="user-badge"></div>
+    </header>
 
-    <!-- Not Logged In View -->
+    <!-- ── NOT LOGGED IN ─────────────────────────────── -->
     <div id="not-logged-in" class="view hidden">
-      <div class="empty-illustration">🔐</div>
-      <p class="empty-title">Not connected</p>
-      <p class="empty-sub">Open the Memora web app and log in first.</p>
-      <a href="http://localhost:5173" target="_blank" class="btn-primary btn-block">Open Memora ↗</a>
+      <div class="lock-wrap">
+        <div class="lock-icon">🔐</div>
+        <p class="lock-title">Not connected</p>
+        <p class="lock-sub">Log into Memora first, then come back.</p>
+      </div>
+      <a href="http://localhost:5173" target="_blank" class="btn-primary">
+        Open Memora ↗
+      </a>
     </div>
 
-    <!-- Logged In / Save View -->
+    <!-- ── SAVE VIEW ──────────────────────────────────── -->
     <div id="save-view" class="view hidden">
-      <!-- Page Preview -->
-      <div class="page-preview" id="page-preview">
-        <div class="preview-favicon" id="preview-favicon"></div>
-        <div class="preview-info">
-          <p class="preview-title" id="preview-title">Loading page…</p>
+
+      <!-- Page preview card -->
+      <div class="preview-card">
+        <div class="preview-fav" id="preview-favicon"></div>
+        <div class="preview-meta">
+          <p class="preview-title" id="preview-title">Loading…</p>
           <p class="preview-url" id="preview-url"></p>
         </div>
       </div>
 
-      <!-- Type Selector -->
-      <div class="type-row">
-        <button class="type-btn active" data-type="article">📄 Article</button>
-        <button class="type-btn" data-type="video">▶️ Video</button>
-        <button class="type-btn" data-type="tweet">𝕏 Tweet</button>
-        <button class="type-btn" data-type="image">🖼️ Image</button>
-        <button class="type-btn" data-type="link">🔗 Link</button>
+      <!-- Price banner (shopping sites only) -->
+      <div id="price-preview" class="price-banner hidden">
+        <span class="price-banner__icon">💰</span>
+        <span class="price-banner__label">Detected price</span>
+        <span id="price-display" class="price-banner__value"></span>
+      </div>
+
+      <!-- Type selector -->
+      <div class="section-label">Save as</div>
+      <div class="type-grid">
+        <button class="type-chip active" data-type="article">
+          <span class="type-chip__icon">📄</span>
+          <span>Article</span>
+        </button>
+        <button class="type-chip" data-type="video">
+          <span class="type-chip__icon">▶️</span>
+          <span>Video</span>
+        </button>
+        <button class="type-chip" data-type="tweet">
+          <span class="type-chip__icon">𝕏</span>
+          <span>Tweet</span>
+        </button>
+        <button class="type-chip" data-type="image">
+          <span class="type-chip__icon">🖼️</span>
+          <span>Image</span>
+        </button>
+        <button class="type-chip" data-type="link">
+          <span class="type-chip__icon">🔗</span>
+          <span>Link</span>
+        </button>
+        <button class="type-chip" data-type="product">
+          <span class="type-chip__icon">🛒</span>
+          <span>Wishlist</span>
+        </button>
       </div>
 
       <!-- Note -->
-      <div class="form-group">
-        <label class="form-label">Note (optional)</label>
-        <textarea id="note-input" class="form-textarea" placeholder="What do you want to remember about this?"></textarea>
+      <div class="field">
+        <label class="field__label" for="note-input">Note</label>
+        <textarea id="note-input" class="field__textarea" placeholder="What do you want to remember?"></textarea>
       </div>
 
       <!-- Tags -->
-      <div class="form-group">
-        <label class="form-label">Tags (optional)</label>
-        <input id="tags-input" class="form-input" type="text" placeholder="e.g. design, ai, tools" />
+      <div class="field">
+        <label class="field__label" for="tags-input">Tags</label>
+        <input id="tags-input" class="field__input" type="text" placeholder="design, ai, tools" />
       </div>
 
-      <!-- Save Button -->
-      <button id="save-btn" class="btn-primary btn-block">
+      <!-- Save -->
+      <button id="save-btn" class="btn-primary">
         <span id="save-btn-text">✦ Save to Memora</span>
       </button>
     </div>
 
-    <!-- Success View -->
+    <!-- ── SUCCESS VIEW ───────────────────────────────── -->
     <div id="success-view" class="view hidden">
-      <div class="success-check">✓</div>
-      <p class="success-title">Saved!</p>
-      <p class="success-sub">Your item has been added to Memora and will be tagged automatically.</p>
-      <a href="http://localhost:5173" target="_blank" class="btn-ghost btn-block">View in Memora ↗</a>
+      <div class="success-wrap">
+        <div class="success-ring">
+          <span class="success-check">✓</span>
+        </div>
+        <p class="success-title">Saved!</p>
+        <p class="success-sub">AI is tagging your item in the background.</p>
+        <a href="http://localhost:5173" target="_blank" class="btn-ghost">
+          View in Memora ↗
+        </a>
+      </div>
     </div>
 
-    <!-- Error Toast -->
-    <div id="error-toast" class="error-toast hidden"></div>
+    <!-- Error toast -->
+    <div id="error-toast" class="toast hidden"></div>
 
   </div>
   <script src="popup.js"></script>

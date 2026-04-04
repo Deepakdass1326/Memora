@@ -12,7 +12,7 @@ const itemSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     type: {
       type: String,
-      enum: ['article', 'tweet', 'image', 'video', 'pdf', 'note', 'link'],
+      enum: ['article', 'tweet', 'image', 'video', 'pdf', 'note', 'link', 'product'],
       required: true,
     },
     title: { type: String, required: true, trim: true },
@@ -28,6 +28,9 @@ const itemSchema = new mongoose.Schema(
     isFavorite: { type: Boolean, default: false },
     isArchived: { type: Boolean, default: false },
     readAt: { type: Date },
+    // Product / Wishlist fields (only set when type === 'product')
+    price:    { type: String },   // snapshot price at save time e.g. "₹1,499"
+    currency: { type: String },   // currency symbol e.g. "₹" or "$"
     // For knowledge graph edges
     relatedItems: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
     topicCluster: { type: String },

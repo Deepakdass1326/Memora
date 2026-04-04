@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const {
   getItems, createItem, getItem, updateItem, deleteItem,
-  toggleFavorite, addHighlight, deleteHighlight, getGraphData, reanalyzeItem,
+  toggleFavorite, addHighlight, deleteHighlight, getGraphData, reanalyzeItem, getItemStats,
 } = require('../controllers/item.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 router.use(protect);
 
 router.get('/graph', getGraphData);
+router.get('/stats', getItemStats);          // type counts — must be before /:id
 router.route('/').get(getItems).post(createItem);
 router.route('/:id').get(getItem).put(updateItem).delete(deleteItem);
 router.patch('/:id/favorite', toggleFavorite);

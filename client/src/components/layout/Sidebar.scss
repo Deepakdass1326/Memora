@@ -137,6 +137,15 @@
     }
   }
 
+  // ── Icon button (reusable) ──
+  .icon-btn {
+    @include m.btn-reset;
+    color: var(--muted-fg);
+    font-size: 16px;
+    cursor: pointer;
+    &:hover { color: var(--foreground); }
+  }
+
   // ── Footer ──
   .sidebar-footer {
     padding: 8px;
@@ -176,13 +185,6 @@
         @include m.transition(left);
         &.on { left: 18px; }
       }
-    }
-
-    .icon-btn {
-      @include m.btn-reset;
-      color: var(--muted-fg);
-      font-size: 16px;
-      &:hover { color: var(--foreground); }
     }
   }
 

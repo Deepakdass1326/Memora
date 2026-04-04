@@ -1,10 +1,23 @@
 {
   "manifest_version": 3,
   "name": "Memora — Save to Second Brain",
-  "version": "1.0.0",
-  "description": "Save any web page, article, tweet, or link to your Memora second brain with one click.",
+  "version": "1.1.0",
+  "description": "Save any web page, article, tweet, or product to your Memora second brain with one click.",
   "permissions": ["activeTab", "storage", "scripting"],
-  "host_permissions": ["http://localhost:5000/*", "https://*.memora.app/*"],
+  "host_permissions": [
+    "http://localhost:5000/*",
+    "https://*.memora.app/*",
+    "https://*.amazon.in/*",
+    "https://*.amazon.com/*",
+    "https://*.flipkart.com/*",
+    "https://*.myntra.com/*",
+    "https://*.meesho.com/*",
+    "https://*.ajio.com/*",
+    "https://*.nykaa.com/*",
+    "https://*.snapdeal.com/*",
+    "https://*.ebay.com/*",
+    "https://*.etsy.com/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -23,9 +36,7 @@
   },
   "commands": {
     "_execute_action": {
-      "suggested_key": {
-        "default": "Alt+Shift+S"
-      },
+      "suggested_key": { "default": "Alt+Shift+S" },
       "description": "Save current page to Memora"
     }
   },
@@ -37,4 +48,5 @@
     }
   ]
 }
+
 

@@ -8,9 +8,12 @@ tagRouter.use(protect);
 
 tagRouter.get('/', async (req, res) => {
   try {
-    // MongoDB aggregation pipeline — database does the counting, not Node.js
+    const { type } = req.query;
+    const match = { user: req.user._id, isArchived: false };
+    if (type) match.type = type;   // filter tags by active content type
+
     const tags = await Item.aggregate([
-      { $match: { user: req.user._id, isArchived: false } },
+      { $match: match },
       { $unwind: '$tags' },
       { $group: { _id: '$tags', count: { $sum: 1 } } },
       { $sort:  { count: -1 } },

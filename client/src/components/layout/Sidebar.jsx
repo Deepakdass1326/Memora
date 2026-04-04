@@ -20,6 +20,7 @@ const TYPES = [
   { label: 'Images',   icon: 'ri-image-line',        to: '/library?type=image'   },
   { label: 'PDFs',     icon: 'ri-file-pdf-line',     to: '/library?type=pdf'     },
   { label: 'Notes',    icon: 'ri-sticky-note-line',  to: '/library?type=note'    },
+  { label: 'Wishlist', icon: 'ri-shopping-bag-line', to: '/library?type=product' },
 ];
 
 function CreateWorkspaceModal({ onClose, onCreated }) {

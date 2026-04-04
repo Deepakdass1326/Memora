@@ -39,7 +39,7 @@ const getItems = async (req, res) => {
 // @route POST /api/items
 const createItem = async (req, res) => {
   try {
-    const { title, description, url, type, content, thumbnail, source, author, tags: manualTags, collections } = req.body;
+    const { title, description, url, type, content, thumbnail, source, author, tags: manualTags, collections, price, currency } = req.body;
     const isUploadedFile = type === 'pdf' || type === 'image';
 
     // ─────────────────────────────────────────────────────────────────────
@@ -76,6 +76,9 @@ const createItem = async (req, res) => {
         topicCluster:  'general',          // Worker will update
         collections:   collections || [],
         aiProcessing:  true,               // Shows spinner badge on card
+        // Product wishlist fields (only if type === 'product')
+        ...(price    && { price }),
+        ...(currency && { currency }),
       });
 
       await item.save();
@@ -400,5 +403,22 @@ const getGraphData = async (req, res) => {
   }
 };
 
-module.exports = { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, deleteHighlight, getGraphData, reanalyzeItem };
+// @desc  Get per-type item counts (for dashboard stats)
+// @route GET /api/items/stats
+const getItemStats = async (req, res) => {
+  try {
+    const rows = await Item.aggregate([
+      { $match: { user: req.user._id, isArchived: false } },
+      { $group: { _id: '$type', count: { $sum: 1 } } },
+    ]);
+    // Convert [{ _id: 'article', count: 5 }, ...] → { article: 5, ... }
+    const stats = {};
+    rows.forEach(r => { stats[r._id] = r.count; });
+    res.json({ success: true, data: stats });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { getItems, createItem, getItem, updateItem, deleteItem, toggleFavorite, addHighlight, deleteHighlight, getGraphData, reanalyzeItem, getItemStats };
 

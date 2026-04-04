@@ -8,8 +8,8 @@ import api from '../services/api';
 import { formatRelative } from '../utils/helpers';
 import './Dashboard.scss';
 
-const TYPE_ICONS = { article: 'ri-article-line', video: 'ri-play-circle-line', tweet: 'ri-twitter-x-line', image: 'ri-image-line', pdf: 'ri-file-pdf-line', note: 'ri-sticky-note-line' };
-const STAT_TYPES = ['article', 'video', 'tweet', 'image', 'pdf', 'note'];
+const TYPE_ICONS = { article: 'ri-article-line', video: 'ri-play-circle-line', tweet: 'ri-twitter-x-line', image: 'ri-image-line', pdf: 'ri-file-pdf-line', note: 'ri-sticky-note-line', link: 'ri-link', product: 'ri-shopping-bag-line' };
+const STAT_TYPES = ['article', 'video', 'tweet', 'image', 'pdf', 'note', 'link', 'product'];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -20,6 +20,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchItems({ limit: 8 });
+    api.get('/items/stats').then(r => setStats(r.data.data)).catch(() => {});
     api.get('/tags').then(r => setTags(r.data.data.slice(0, 14))).catch(() => { });
     api.get('/notes').then(r => setRecentNotes(r.data.data.slice(0, 4))).catch(() => { });
   }, []);
@@ -37,13 +38,6 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    if (items.length) {
-      const counts = {};
-      items.forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
-      setStats(counts);
-    }
-  }, [items]);
 
   const hour = new Date().getHours();
   const greeting =
@@ -73,15 +67,22 @@ export default function Dashboard() {
           </div>
           <div className="dashboard-hero__stats">
             {STAT_TYPES.filter(t => stats[t]).map(type => (
-              <div key={type} className={`stat-chip stat-chip--${type}`}>
+              <Link
+                key={type}
+                to={`/library?type=${type}`}
+                className={`stat-chip stat-chip--${type}`}
+                style={{ textDecoration: 'none' }}
+              >
                 <div className="stat-chip__icon">
                   <i className={TYPE_ICONS[type]} />
                 </div>
                 <div className="stat-chip__info">
                   <span className="stat-chip__num">{stats[type]}</span>
-                  <span className="stat-chip__label">{type}s</span>
+                  <span className="stat-chip__label">
+                    {({ product: 'Products', link: 'Links', article: 'Articles', video: 'Videos', tweet: 'Tweets', image: 'Images', pdf: 'PDFs', note: 'Notes' })[type] || `${type}s`}
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -101,13 +101,44 @@ const startWorker = () => {
 
         // ── Step 2: AI Tag Generation ──────────────────────────────────────
         job.updateProgress(25);
-        const { tags: aiTags, topicCluster } = await generateTags({
-          title:       item.title,
-          description: finalDescription,
-          content:     finalContent,
-          type:        item.type,
-          source:      item.source,
-        });
+        let aiTags, topicCluster;
+
+        if (item.type === 'product') {
+          // Product-specific prompt: extract brand, category, features
+          const { routeRequest } = require('../services/aiRouter.service');
+          const productContext = [
+            item.title,
+            item.price ? `Price: ${item.price}` : '',
+            item.description || finalDescription,
+          ].filter(Boolean).join('\n');
+
+          const raw = await routeRequest(
+            'tag',
+            'You are a shopping assistant. Given a product name and description, respond with ONLY a JSON object with two keys: "tags" (array of 5-8 lowercase keywords: brand name, product category, key features) and "topicCluster" (one of: electronics, fashion, home, sports, books, beauty, food, other).',
+            productContext
+          ).catch(() => null);
+
+          try {
+            const parsed = JSON.parse((raw || '').replace(/```json|```/g, '').trim());
+            aiTags      = Array.isArray(parsed.tags) ? parsed.tags : ['product', 'wishlist'];
+            topicCluster = parsed.topicCluster || 'other';
+          } catch {
+            aiTags       = ['product', 'wishlist'];
+            topicCluster = 'other';
+          }
+        } else {
+          // Standard article/video/link tagging
+          const result = await generateTags({
+            title:       item.title,
+            description: finalDescription,
+            content:     finalContent,
+            type:        item.type,
+            source:      item.source,
+          });
+          aiTags       = result.tags;
+          topicCluster = result.topicCluster;
+        }
+
 
         // ── Step 3: Generate Embedding ─────────────────────────────────────
         job.updateProgress(50);

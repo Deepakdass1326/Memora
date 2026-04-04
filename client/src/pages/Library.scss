@@ -19,6 +19,8 @@
   color: var(--muted-fg);
   font-size: .78rem;
   font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
   @include m.transition;
 
   &.active {

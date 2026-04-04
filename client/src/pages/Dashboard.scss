@@ -24,35 +24,34 @@
 }
 
 .stat-chip {
-  @include m.flex(row, center, flex-start, 14px);
-  padding: 14px 20px;
-  border-radius: 16px;
+  @include m.flex(row, center, flex-start, 8px);
+  padding: 6px 12px;
+  border-radius: 99px;
   background: var(--card);
   border: 1px solid var(--border);
-  min-width: 130px;
   @include m.transition;
-  cursor: default;
+  cursor: pointer;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--accent-muted);
+    transform: translateY(-1px);
   }
 
   &__icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
+    width: 26px; height: 26px;
+    border-radius: 8px;
     @include m.flex(row, center, center);
     flex-shrink: 0;
-    font-size: 20px;
+    font-size: 13px;
   }
 
   &__info {
-    @include m.flex(column, flex-start, center, 1px);
+    @include m.flex(row, baseline, flex-start, 5px);
   }
 
-  &__num   { font-family: var(--font-display); font-size: 1.7rem; color: var(--foreground); line-height: 1; }
-  &__label { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-fg); margin-top: 2px; }
+  &__num   { font-weight: 700; font-size: 1rem; color: var(--foreground); line-height: 1; }
+  &__label { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); }
 
   // Per-type accent colors
   &--article .stat-chip__icon { background: color-mix(in srgb, var(--type-article) 12%, transparent); color: var(--type-article); }
@@ -62,6 +61,7 @@
   &--pdf     .stat-chip__icon { background: color-mix(in srgb, var(--type-pdf)     12%, transparent); color: var(--type-pdf);     }
   &--note    .stat-chip__icon { background: color-mix(in srgb, var(--type-note)    12%, transparent); color: var(--type-note);    }
   &--link    .stat-chip__icon { background: color-mix(in srgb, var(--type-link)    12%, transparent); color: var(--type-link);    }
+  &--product .stat-chip__icon { background: color-mix(in srgb, var(--type-product) 12%, transparent); color: var(--type-product); }
 }
 
 // ── Section headers ───────────────────────────────────────

@@ -56,7 +56,7 @@
   /* type colors */
   --type-article: #3B82F6; --type-tweet: #1DA1F2; --type-image: #8B5CF6;
   --type-video:   #EF4444; --type-pdf:   #F59E0B; --type-note:  #10B981;
-  --type-link:    #6366F1;
+  --type-link:    #6366F1; --type-product: #F97316;
 
   /* cluster colors */
   --cluster-technology: #3B82F6; --cluster-design:      #8B5CF6;

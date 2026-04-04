@@ -5,7 +5,7 @@ import { useItems } from '../../context/ItemsContext';
 import { formatRelative, getTypeColor, getClusterColor, getDomain } from '../../utils/helpers.jsx';
 import api from '../../services/api';
 
-const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line', link:'ri-link' };
+const TYPE_ICONS = { article:'ri-article-line', video:'ri-play-circle-line', tweet:'ri-twitter-x-line', image:'ri-image-line', pdf:'ri-file-pdf-line', note:'ri-sticky-note-line', link:'ri-link', product:'ri-shopping-bag-line' };
 
 export default function ItemCard({ item, onOpen }) {
   const { toggleFavorite, deleteItem, patchItem } = useItems();
@@ -95,6 +95,20 @@ export default function ItemCard({ item, onOpen }) {
           )}
         </div>
         <h3 className="card-body__title">{item.title}</h3>
+        {/* Price badge — shown only for wishlist products */}
+        {item.type === 'product' && item.price && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            marginTop: 6, marginBottom: 2,
+            background: '#E8F4EF', border: '1px solid #52B788',
+            borderRadius: 6, padding: '3px 10px',
+          }}>
+            <i className="ri-shopping-bag-line" style={{ fontSize: '0.75rem', color: '#2D6A4F' }} />
+            <span style={{ fontWeight: 700, color: '#1A5C3D', fontSize: '0.9rem', letterSpacing: '0.01em' }}>
+              {item.currency || ''}{item.price}
+            </span>
+          </div>
+        )}
         {item.description && <p className="card-body__desc">{item.description}</p>}
         {/* AI Processing Badge */}
         {item.aiProcessing && (
