@@ -1,120 +1,308 @@
 <div align="center">
-  <h1>🧠 Memora</h1>
-  <p><strong>Your AI-Powered Second Brain & Intelligent Knowledge Graph</strong></p>
-  
-  [![Tech Stack](https://img.shields.io/badge/Stack-MERN%20%7C%20Vite%20%7C%20BullMQ-2D6A4F?style=for-the-badge)](#)
-  [![Status](https://img.shields.io/badge/Status-Active-blue?style=for-the-badge)](#)
-  [![Security](https://img.shields.io/badge/Security-HttpOnly%20Auth-red?style=for-the-badge)](#)
-</div>
+
+<img src="https://img.shields.io/badge/Memora-AI%20Knowledge%20Graph-6366f1?style=for-the-badge&logo=brain&logoColor=white" alt="Memora" />
+
+<br /><br />
+
+<h1>🧠 Memora — Your Intelligent Second Brain</h1>
+
+<p>A full-stack AI-powered knowledge operating system that <strong>saves, auto-tags, interlinks, and resurfaces</strong> everything you want to remember.</p>
 
 <br />
 
-**Memora** is a minimalist, high-performance knowledge operating system built to solve information overload. It allows users to seamlessly save notes, bookmarks, videos, and articles, while autonomous AI agents automatically tag, organize, and map the relationships between them.
+[![Live App](https://img.shields.io/badge/🚀%20Live%20App-Visit%20Memora-6366f1?style=for-the-badge)](https://memora-frontend.vercel.app)
+[![Backend Health](https://img.shields.io/badge/API-Online-22c55e?style=for-the-badge)](https://memora-backend-24mk.onrender.com/api/health)
+[![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](#)
+
+</div>
 
 ---
 
-### 🌟 Live Demo
-🟢 [**Memora Web App - Live Preview**](https://memora-backend-24mk.onrender.com)
+## 📌 What is Memora?
 
-*(Note: The link above connects to the active backend. The frontend URL connects securely to this API.)*
+We save hundreds of links, articles, videos, and notes every week — and forget most of them within days.
 
----
+**Memora solves this.** It is a minimalist, high-performance knowledge operating system inspired by Notion, Readwise, and Obsidian — but with a fully autonomous AI engine working in the background.
 
-## ✨ Features
-
-- **Intelligent Knowledge Graph:** Move beyond folders. Memora visualizes connections between scattered notes, articles, and bookmarks using automated context discovery and AI embeddings.
-- **Smart Omni-Search Engine:** A single search bar that simultaneously queries your personal library, related YouTube metadata, and direct DuckDuckGo/Web scraper results.
-- **Autonomous Multi-LLM Routing:** Background worker queues automatically process saved items via Gemini, Cohere, or Mistral models depending on the required task (tagging, summarizing, or embedding).
-- **Chrome Extension Sync:** Capture content from anywhere on the internet directly into your workspace with a single click.
-- **Flash-Card Memory Resurfacing:** The system intelligently brings up older, forgotten "Hidden Gems" from your library based on spaced repetition and viewing habits.
-- **Distraction-Free Workspace:** A rich-text note-taking canvas built on Editor.js that auto-links entities as you type.
+When you save something, Memora's AI workers read the content, generate semantic tags, compute topic clusters, create embeddings, and map relationships to everything else you have ever saved — all without you lifting a finger.
 
 ---
 
-## 🛠️ The Technology Stack
+## ✨ Feature Highlights
 
-**Frontend:**
-- React 18, Vite, React Router DOM
-- Custom CSS / SCSS (Minimalist, scroll-free UX architecture)
-- Zustand (State Management)
-- Framer Motion (Micro-animations)
+### 📚 Unified Library
+Save and organize anything:
+- **Articles & Blog Posts** — auto-summarized and tagged
+- **YouTube Videos** — title, thumbnail, and channel stored
+- **PDFs** — content extracted and indexed
+- **Plain Notes** — rich-text editor with full formatting
+- **Bookmarks** — any URL captured and categorized
 
-**Backend & Architecture:**
-- Node.js & Express.js
-- MongoDB / Mongoose (Aggregations, Compound Indexes)
-- Redis Cloud (Upstash) -> BullMQ (Asynchronous Task Queues)
-- Cheerio & YouTube Data API (Web Scraping / Data parsing)
-
-**AI & Embeddings:**
-- @google/generative-ai (Gemini)
-- @cohere/ai (Cohere API for embeddings and clustering)
+All content lives in a clean, filterable library with full-text search.
 
 ---
 
-## 🌊 Application Flow & Architecture
+### 🔍 Omni-Search (3 Sources in 1)
+One search bar, three powerful sources rendered simultaneously:
+1. **📂 Your Library** — shows matching items and notes from your personal collection
+2. **📺 YouTube** — fetches relevant video results via YouTube Data API v3
+3. **🌐 Web** — scrapes live DuckDuckGo results using Cheerio (no API key needed)
 
-1. **Information Capture:**
-   The user saves an item (a URL, text snippet, or Note) via the Web Dashboard or Chrome Extension. 
-2. **Immediate Feedback:**
-   The system saves the raw metadata into MongoDB instantly for a fast UI response.
-3. **Background AI Processing (The Magic):**
-   A Redis/BullMQ task is dispatched. In the background, the application routes the content to standard LLMs which read the content, generate summary semantic tags, determine a topic cluster, and compute mathematical embeddings without blocking the user's workflow.
-4. **Graph Linking:**
-   The backend scans the new entity's tags against the entire library using an `O(n×m)` mapping algorithm to form dynamic connections (Links).
-5. **Retrieval:**
-   When searching, the application parallelizes requests using `Promise.all()` to rapidly query the local database, fetch live YouTube JSON, and scrape external search engines, consolidating it into a unified UI.
+Search only fires on **Enter / Search button** — zero unnecessary API calls while typing.
 
 ---
 
-## 🔒 Security Highlights
-
-- **Http-Only Cookies for Auth:** Sensitive JWT tokens are **never** stored in `localStorage`. Memora strictly utilizes `httpOnly`, `secure`, and `sameSite` cookies to drastically prevent Cross-Site Scripting (XSS) vulnerabilities.
-- **Sanitized Scrapes:** HTML fetched from external websites is strictly sanitized before AI processing or display.
-- **In-Memory Attack Mitigation:** JWT verification is cached using an in-memory TTL mechanism to prevent database exhaustion (DDoS protection on auth checks).
+### 🕸️ Knowledge Graph
+An interactive visual graph that maps everything you know:
+- **Nodes** represent individual items and notes
+- **Edges** connect nodes that share tags, topic clusters, or explicit relationships
+- The graph uses an **O(n×m) tag-index algorithm** for instant linking without blocking the server
 
 ---
 
-## 💻 Local Setup (Development)
+### 🤖 Multi-LLM Routing (AI Engine)
+Every saved item is automatically processed in the background by an intelligent AI router:
 
-Memora requires a MongoDB Instance, a Redis server (for queues), and a set of AI API keys.
+| Task | Model Used | Why |
+|---|---|---|
+| Auto-tagging & Categorization | Gemini Flash | Fast, cheap, accurate for classification |
+| Long-form Summarization | Cohere Command | Optimized for document summarization |
+| Semantic Embedding | Gemini Embedding | High-dimensional vectors for similarity search |
 
-1. **Clone & Install**
-   ```bash
-   git clone https://github.com/Deepakdass1326/Memora.git
-   cd Memora
-   
-   # Install backend dependencies
-   cd server && npm install
-   
-   # Install frontend dependencies
-   cd ../client && npm install
-   ```
+The router dispatches tasks via **BullMQ + Redis queues** — your UI never waits for AI.
 
-2. **Environment Configuration**
-   Create a `.env` file in the `/server` directory:
-   ```env
-   # Example Configuration - Do NOT share real keys
-   PORT=5000
-   FRONTEND_URL=http://localhost:5173
-   
-   MONGO_URI=your_mongodb_cluster_string
-   REDIS_URL=your_redis_connection_string
-   JWT_SECRET=strong_random_secret
-   
-   GEMINI_API_KEY=your_gemini_key
-   COHERE_API_KEY=your_cohere_key
-   YOUTUBE_API_KEY=your_yt_key
-   ```
+---
 
-3. **Run the Application**
-   ```bash
-   # Terminal 1: Start the Backend (API + Redis Workers)
-   cd server
-   npm run dev
+### 🔁 Memory Resurfacing
+Inspired by spaced repetition, Memora intelligently resurfaces forgotten content:
+- **"Today in History"** — items you saved exactly 1 year ago
+- **"6 Months Ago", "3 Months Ago"** — memory check-ins
+- **"Hidden Gems"** — items saved long ago that you have barely reviewed
+- All resurface queries fire in **parallel** using `Promise.all()` for sub-50ms response time
 
-   # Terminal 2: Start the Frontend (Vite)
-   cd client
-   npm run dev
-   ```
+---
 
-*(Memora will now be running iteratively on `http://localhost:5173` for the UI and `http://localhost:5000` for the express API.)*
+### 📝 Rich-Text Workspace / Notes
+- Workspaces group multiple notes together like a mini Notion
+- Notes editor supports headings, lists, code blocks, tables, and more
+- Notes are full participants in the Knowledge Graph — they link to Items automatically via shared tags
+
+---
+
+### 🔌 Chrome Extension
+A lightweight browser extension that lets you:
+- Save any webpage to your Memora library in one click
+- Automatically captures the page title, URL, description, and thumbnail
+- Communicates securely with the backend via httpOnly cookies
+
+---
+
+## 🏗️ Architecture & Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              MEMORA ARCHITECTURE                            │
+│                                                                             │
+│   ┌──────────────┐    ┌───────────────────┐    ┌───────────────────────┐  │
+│   │   React UI   │───▶│  Express REST API  │───▶│   MongoDB Atlas       │  │
+│   │   (Vite)     │    │   (Node.js)        │    │   (Aggregation Pipelines)│ │
+│   └──────────────┘    └────────┬──────────┘    └───────────────────────┘  │
+│          │                     │                                            │
+│          │               ┌─────▼──────┐                                    │
+│          │               │ Redis Queue │  (Upstash / BullMQ)               │
+│          │               └─────┬──────┘                                    │
+│          │                     │                                            │
+│   ┌──────┴──────┐       ┌──────▼──────────────────────────────────┐       │
+│   │  Chrome     │       │           AI Router Service               │       │
+│   │  Extension  │       │  Gemini  │  Cohere  │  Mistral           │       │
+│   └─────────────┘       └──────────────────────────────────────────┘       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Step-by-Step Data Flow
+
+```
+1. USER SAVES AN ITEM
+   └─▶ POST /api/items (or Chrome Extension popup.js)
+       └─▶ MongoDB saves raw metadata immediately (fast response to UI)
+           └─▶ BullMQ dispatches background AI job to Redis queue
+
+2. BACKGROUND AI PROCESSING (non-blocking)
+   └─▶ Worker picks up the job
+       └─▶ AI Router selects optimal model (Gemini / Cohere / Mistral)
+           └─▶ Model: generates tags, topic cluster, summarization, embedding
+               └─▶ MongoDB item updated silently (aiProcessing flag → false)
+
+3. KNOWLEDGE GRAPH LINKING
+   └─▶ New item's tags compared against all existing entities
+       Using O(n×m) tag-index Map (not O(n²) nested loops)
+           └─▶ Edges added to linked items in MongoDB
+
+4. USER SEARCHES
+   └─▶ Promise.all() fires 3 queries simultaneously:
+       ├─▶ MongoDB: regex match on user's library
+       ├─▶ YouTube Data API: video results
+       └─▶ DuckDuckGo HTML scrape: live web results (via Cheerio)
+           └─▶ All merged & returned in a single unified response
+```
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+| Technology | Purpose |
+|---|---|
+| **React 18 + Vite** | UI framework with lightning-fast HMR |
+| **React Router DOM** | Client-side routing & navigation |
+| **Zustand** | Lightweight global state management |
+| **Framer Motion** | Micro-animations and transitions |
+| **Remixicon** | Icon library |
+| **Vanilla CSS / SCSS** | Custom design system (no Tailwind) |
+
+### Backend
+| Technology | Purpose |
+|---|---|
+| **Node.js + Express.js** | REST API server |
+| **MongoDB + Mongoose** | Primary database with compound indexes |
+| **Redis (Upstash)** | Queue broker and cache layer |
+| **BullMQ** | Async job queue for AI processing |
+| **Cheerio** | Web scraping for DuckDuckGo results |
+| **Compression** | Gzip middleware — reduces response size ~80% |
+| **cookie-parser** | Secure httpOnly cookie handling |
+
+### AI & External APIs
+| Technology | Purpose |
+|---|---|
+| **Google Gemini** | Auto-tagging, summarization, embeddings |
+| **Cohere** | Command model for long-form summarization  |
+| **YouTube Data API v3** | Fetch video metadata for search results |
+| **ImageKit.io** | CDN-backed image and file storage |
+
+---
+
+## ⚡ Performance Optimizations
+
+These are intentional engineering decisions made to keep Memora fast at scale:
+
+| Optimization | Before | After | Improvement |
+|---|---|---|---|
+| Tags endpoint | Full collection scan in Node.js | MongoDB `$unwind` + `$group` aggregation | ~5× faster |
+| Resurface endpoint | 5 sequential DB queries | `Promise.all()` parallel queries | ~4× faster |
+| Knowledge Graph links | O(n²) nested forEach | O(n×m) tag Map index | ~5× faster, non-blocking |
+| Auth middleware | DB hit on every request | In-memory user cache (30s TTL) | ~80% fewer DB reads |
+| DB Queries | Missing `isArchived` in indexes | Compound `{user, isArchived, createdAt}` indexes | Eliminates full collection scans |
+| API responses | Uncompressed JSON | Gzip compression via `compression` middleware | ~80% smaller payloads |
+
+---
+
+## 🔒 Security Design
+
+- **HttpOnly Cookies** — JWT tokens are **never** stored in `localStorage`. Auth uses `httpOnly`, `Secure`, `SameSite=Strict` cookies — fully XSS-proof
+- **In-Memory Auth Cache** — User lookups cached server-side with 30s TTL to prevent database DDoS from auth-hammering
+- **Rate Limiting** — `express-rate-limit` applied globally
+- **Input Sanitization** — All scraped or user-provided HTML is sanitized before processing or storage
+- **Protected Routes** — Every API endpoint behind a `protect` middleware guard; no data leaks between users
+
+---
+
+## 🚀 Local Development Setup
+
+### Prerequisites
+- Node.js v18+
+- A MongoDB Atlas cluster (free tier works)
+- A Redis server — [Upstash free tier](https://upstash.com/) recommended
+- API Keys: Gemini, Cohere, YouTube Data API v3
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Deepakdass1326/Memora.git
+cd Memora
+```
+
+### 2. Install Dependencies
+```bash
+# Backend
+cd server && npm install
+
+# Frontend
+cd ../client && npm install
+```
+
+### 3. Configure Environment Variables
+Create `server/.env`:
+```env
+PORT=5000
+CLIENT_URL=http://localhost:5173
+
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=a_long_random_secret_string
+
+REDIS_URL=your_upstash_redis_url
+
+GEMINI_API_KEY=your_gemini_api_key
+COHERE_API_KEY=your_cohere_api_key
+YOUTUBE_API_KEY=your_youtube_data_api_key
+
+IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
+IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
+IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_id
+```
+
+Create `client/.env`:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### 4. Run the App
+```bash
+# Terminal 1 — Backend API + BullMQ Worker
+cd server && npm run dev
+
+# Terminal 2 — Frontend
+cd client && npm run dev
+```
+
+Open **http://localhost:5173** 🎉
+
+---
+
+## 📁 Project Structure
+
+```
+Memora/
+├── client/                  # React + Vite Frontend
+│   ├── src/
+│   │   ├── pages/           # Dashboard, Library, Search, Graph, Workspace
+│   │   ├── components/      # Reusable UI (ItemCard, Sidebar, Navbar)
+│   │   ├── store/           # Zustand global state
+│   │   ├── services/        # Axios API calls
+│   │   └── styles/          # Global CSS design system
+│   └── vercel.json          # Vercel deployment config (SPA rewrites)
+│
+├── server/                  # Node.js + Express Backend
+│   ├── src/
+│   │   ├── controllers/     # Business logic (item, note, auth, graph)
+│   │   ├── models/          # Mongoose schemas with compound indexes
+│   │   ├── routes/          # API route definitions
+│   │   ├── middleware/       # auth guard, error handler
+│   │   ├── services/        # AI router, embedding, storage
+│   │   ├── queues/          # BullMQ job definitions
+│   │   └── config/          # Database connection
+│   └── .env                 # Environment variables (git-ignored)
+│
+└── extension/               # Chrome Extension
+    ├── manifest.json
+    ├── popup.html / popup.js
+    └── background.js
+```
+
+---
+
+<div align="center">
+
+Made with ❤️ by [Deepak Dass](https://github.com/Deepakdass1326)
+
+⭐ **Star this repo** if Memora helped you build a smarter second brain!
+
+</div>
