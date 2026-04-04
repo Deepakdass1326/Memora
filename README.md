@@ -97,8 +97,8 @@ A lightweight browser extension that lets you:
 
 #### How to Install the Extension (For New Users)
 Since the extension is currently in beta and not yet on the Chrome Web Store, you can manually install it via Google Drive:
-1. **Download the Extension:** [Open Memora Extension Folder (Google Drive)](https://drive.google.com/drive/folders/1aNzB-bnQppf7jEz6qy2BN116k7HcTWPt?usp=sharing)
-2. Click the **Download** button on the folder (Google Drive will automatically download it as a `.zip` file), and extract it to your computer.
+1. **Download the Extension:** [Download Memora Extension ZIP (Google Drive)](https://drive.google.com/file/d/1J0_uXPLprenDHzsr_jXkXCbES4oB9aXG/view?usp=sharing)
+2. Click the **Download** icon to download the `.zip` file, and extract it to a folder on your computer.
 3. Open Google Chrome and go to `chrome://extensions/`
 4. Turn ON **Developer mode** (toggle in the top-right corner).
 5. Click **Load unpacked** and select the folder you just extracted.
