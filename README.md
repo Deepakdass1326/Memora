@@ -95,6 +95,15 @@ A lightweight browser extension that lets you:
 - Automatically captures the page title, URL, description, and thumbnail
 - Communicates securely with the backend via httpOnly cookies
 
+#### How to Install the Extension (For New Users)
+Since the extension is currently in beta and not yet on the Chrome Web Store, you can manually install it via Google Drive:
+1. **Download the Extension:** [Open Memora Extension Folder (Google Drive)](https://drive.google.com/drive/folders/1aNzB-bnQppf7jEz6qy2BN116k7HcTWPt?usp=sharing)
+2. Click the **Download** button on the folder (Google Drive will automatically download it as a `.zip` file), and extract it to your computer.
+3. Open Google Chrome and go to `chrome://extensions/`
+4. Turn ON **Developer mode** (toggle in the top-right corner).
+5. Click **Load unpacked** and select the folder you just extracted.
+6. Pin the Memora extension to your toolbar. Log in to the web app to automatically sync your account, and you're ready to save!
+
 ---
 
 ## 🏗️ Architecture & Data Flow

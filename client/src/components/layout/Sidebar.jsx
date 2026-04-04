@@ -123,10 +123,11 @@ function CreateWorkspaceModal({ onClose, onCreated }) {
 export default function Sidebar({ collapsed, setCollapsed }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { workspaces } = useWorkspaces();
+  const { workspaces, deleteWorkspace } = useWorkspaces();
   const navigate = useNavigate();
   const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [confirmDeleteWS, setConfirmDeleteWS] = useState(null);
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'M';
 
   // Manual active check for query-param links
@@ -205,9 +206,39 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                     key={ws._id}
                     to={`/workspace/${ws._id}`}
                     className={isWorkspaceActive(`/workspace/${ws._id}`) ? 'sidebar-type-item active' : 'sidebar-type-item'}
+                    style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
-                    <i className="ri-layout-grid-line" />
-                    <span>{ws.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <i className="ri-layout-grid-line" />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ws.name}</span>
+                    </div>
+                    {confirmDeleteWS === ws._id ? (
+                      <div style={{ display: 'flex', gap: '4px', opacity: 1, zIndex: 10 }}>
+                        <button 
+                          className="icon-btn focus:outline-none" 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteWorkspace(ws._id); }}
+                          style={{ padding: '2px', fontSize: '12px', color: 'white', background: '#ef4444', border: 'none', cursor: 'pointer', borderRadius: '4px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <i className="ri-check-line" />
+                        </button>
+                        <button 
+                          className="icon-btn focus:outline-none" 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteWS(null); }}
+                          style={{ padding: '2px', fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--surface-2)', border: '1px solid var(--border)', cursor: 'pointer', borderRadius: '4px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <i className="ri-close-line" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        className="icon-btn focus:outline-none" 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteWS(ws._id); }}
+                        style={{ padding: '4px', fontSize: '1rem', color: 'var(--text-tertiary)', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        title="Delete Workspace"
+                      >
+                        <i className="ri-delete-bin-line" />
+                      </button>
+                    )}
                   </Link>
                 ))}
                 {workspaces?.length === 0 && (

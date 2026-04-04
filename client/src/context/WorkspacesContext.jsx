@@ -31,6 +31,16 @@ export function WorkspacesProvider({ children }) {
     }
   };
 
+  const deleteWorkspace = async (id) => {
+    try {
+      await api.delete(`/workspaces/${id}`);
+      setWorkspaces((prev) => prev.filter(ws => ws._id !== id));
+    } catch (error) {
+      console.error('Failed to delete workspace', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchWorkspaces();
@@ -38,7 +48,7 @@ export function WorkspacesProvider({ children }) {
   }, [user]);
 
   return (
-    <WorkspacesContext.Provider value={{ workspaces, loading, fetchWorkspaces, createWorkspace }}>
+    <WorkspacesContext.Provider value={{ workspaces, loading, fetchWorkspaces, createWorkspace, deleteWorkspace }}>
       {children}
     </WorkspacesContext.Provider>
   );

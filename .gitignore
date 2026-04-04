@@ -19,3 +19,10 @@ ARCHITECTURE.md
 PROJECT_MAPPING.md
 DEPLOYMENT.md
 missing.md
+PROJECT_OVERVIEW.md
+SCALE_UP.md
+UI_AUDIT_REPORT.md
+
+# Extension build and keys
+*.pem
+*.crx

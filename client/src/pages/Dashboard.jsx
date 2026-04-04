@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [tags, setTags] = useState([]);
   const [stats, setStats] = useState({});
   const [recentNotes, setRecentNotes] = useState([]);
+  const [openNoteMenuId, setOpenNoteMenuId] = useState(null);
+  const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState(null);
 
   useEffect(() => {
     fetchItems({ limit: 8 });
@@ -28,13 +30,13 @@ export default function Dashboard() {
   const handleDeleteNote = async (e, noteId) => {
     e.preventDefault();
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this note?')) {
-      try {
-        await api.delete(`/notes/${noteId}`);
-        setRecentNotes(prev => prev.filter(n => n._id !== noteId));
-      } catch (err) {
-        console.error('Failed to delete note:', err);
-      }
+    try {
+      await api.delete(`/notes/${noteId}`);
+      setRecentNotes(prev => prev.filter(n => n._id !== noteId));
+      setOpenNoteMenuId(null);
+      setConfirmDeleteNoteId(null);
+    } catch (err) {
+      console.error('Failed to delete note:', err);
     }
   };
 
@@ -149,12 +151,32 @@ export default function Dashboard() {
                       {note.createdAt ? formatRelative(note.createdAt) : 'Just now'}
                     </span>
                     <div className="card-actions" onClick={e => e.stopPropagation()}>
-                      <button className="card-btn card-btn--fav" title="Favorite">
+                      <button className="card-btn card-btn--fav" onClick={e => e.preventDefault()} title="Favorite">
                         <i className="ri-heart-line" />
                       </button>
-                      <button className="card-btn card-btn--danger" onClick={(e) => { e.preventDefault(); handleDeleteNote(e, note._id); }} title="Delete Note">
-                        <i className="ri-delete-bin-line" />
-                      </button>
+                      <div className="card-menu">
+                        <button className="card-btn" onClick={e => { e.preventDefault(); e.stopPropagation(); setOpenNoteMenuId(openNoteMenuId === note._id ? null : note._id); setConfirmDeleteNoteId(null); }} title="More">
+                          <i className="ri-more-2-line" />
+                        </button>
+                        {openNoteMenuId === note._id && (
+                          <div className="card-menu__dropdown animate-scale">
+                            {confirmDeleteNoteId !== note._id ? (
+                              <button className="card-menu__item card-menu__item--danger" onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteNoteId(note._id); }}>
+                                <i className="ri-delete-bin-line" />Delete
+                              </button>
+                            ) : (
+                              <div style={{ display: 'flex', gap: 4, padding: '4px' }}>
+                                <button className="card-menu__item card-menu__item--danger" onClick={(e) => handleDeleteNote(e, note._id)} style={{ flex: 1, fontSize: '0.78rem' }}>
+                                  ✓ Yes, delete
+                                </button>
+                                <button className="card-menu__item" onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteNoteId(null); }} style={{ flex: 1, fontSize: '0.78rem' }}>
+                                  ✕ Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>

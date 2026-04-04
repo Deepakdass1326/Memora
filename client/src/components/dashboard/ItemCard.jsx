@@ -13,7 +13,6 @@ export default function ItemCard({ item, onOpen }) {
   const [imgError, setImgError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [reanalyzing, setReanalyzing] = useState(false);
 
   // ── Auto-poll while AI is processing in the background ──────────────────
   useEffect(() => {
@@ -29,22 +28,6 @@ export default function ItemCard({ item, onOpen }) {
     }, 5000); // Poll every 5 seconds
     return () => clearInterval(interval);
   }, [item._id, item.aiProcessing, patchItem]);
-
-  const handleReanalyze = async (e) => {
-    e.stopPropagation();
-    setMenuOpen(false);
-    setReanalyzing(true);
-    try {
-      const res = await api.post(`/items/${item._id}/reanalyze`);
-      if (res.data.success) {
-        patchItem(item._id, res.data.data);
-      }
-    } catch (err) {
-      console.error('Reanalyze failed:', err);
-    } finally {
-      setReanalyzing(false);
-    }
-  };
 
   const handleClick = () => { if (onOpen) onOpen(item); else navigate(`/item/${item._id}`); };
   const handleFav   = (e) => { e.stopPropagation(); toggleFavorite(item._id); };
@@ -143,10 +126,7 @@ export default function ItemCard({ item, onOpen }) {
             </button>
             {menuOpen && (
               <div className="card-menu__dropdown animate-scale">
-                <button className="card-menu__item" onClick={handleReanalyze} disabled={reanalyzing}>
-                  <i className={reanalyzing ? 'ri-loader-2-line' : 'ri-sparkling-2-line'} style={reanalyzing ? { animation: 'spin 1s linear infinite' } : {}} />
-                  {reanalyzing ? 'Analyzing...' : 'Re-analyze'}
-                </button>
+
                 {!confirmDelete ? (
                   <button className="card-menu__item card-menu__item--danger" onClick={handleDelete}>
                     <i className="ri-delete-bin-line" />Delete
