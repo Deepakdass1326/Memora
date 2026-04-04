@@ -1,5 +1,5 @@
 import './Search.scss';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import api from '../services/api';
@@ -26,10 +26,8 @@ export default function Search() {
   const [recentSearches, setRecentSearches] = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [searched,    setSearched]    = useState(false);
-  const [mode,        setMode]        = useState('semantic');   // defaults to semantic
   const [activeMode,  setActiveMode]  = useState(null);        // mode actually used by last request
-  const inputRef    = useRef(null);
-  const debounceRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => {
@@ -51,18 +49,19 @@ export default function Search() {
     } catch {}
   };
 
-  const doSearch = useCallback(async (q, searchMode) => {
-    if (!q.trim()) { 
-      setResults([]); 
+  const doSearch = async (q) => {
+    if (!q || !q.trim()) {
+      setResults([]);
       setInternet([]);
       setVideos([]);
-      setSearched(false); 
-      setActiveMode(null); 
-      return; 
+      setSearched(false);
+      setActiveMode(null);
+      return;
     }
-    setLoading(true); setSearched(true);
+    setLoading(true);
+    setSearched(true);
     try {
-      const res = await api.get('/search', { params: { q, mode: searchMode || mode } });
+      const res = await api.get('/search', { params: { q } });
       setResults(res.data.data || []);
       setInternet(res.data.internet || []);
       setVideos(res.data.videos || []);
@@ -75,13 +74,10 @@ export default function Search() {
     } finally {
       setLoading(false);
     }
-  }, [mode]);
-
-  const handleChange = (e) => {
-    const val = e.target.value; setQuery(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => doSearch(val), 400);
   };
+
+  // Just update local state — NO API call on every keystroke
+  const handleChange = (e) => setQuery(e.target.value);
 
   const highlight = (text) => {
     if (!text || !query || activeMode === 'semantic') return text;
@@ -103,13 +99,36 @@ export default function Search() {
             ref={inputRef}
             id="search-input"
             type="text"
-            placeholder={mode === 'semantic' ? 'Ask anything — "productivity for deep work"…' : 'Search by title, content, tags…'}
+            placeholder='Search your library or the web…'
             value={query}
             onChange={handleChange}
             onKeyDown={e => e.key === 'Enter' && doSearch(query)}
           />
           <div className="search-right">
-            {query && <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setInternet([]); setVideos([]); setSearched(false); }}><i className="ri-close-line" /></button>}
+            {query && (
+              <button className="search-clear" onClick={() => { setQuery(''); setResults([]); setInternet([]); setVideos([]); setSearched(false); }}>
+                <i className="ri-close-line" />
+              </button>
+            )}
+            <button
+              id="search-submit-btn"
+              onClick={() => doSearch(query)}
+              disabled={!query.trim() || loading}
+              style={{
+                padding: '6px 16px',
+                background: query.trim() ? 'var(--accent)' : 'var(--muted)',
+                color: query.trim() ? '#fff' : 'var(--muted-foreground)',
+                border: 'none',
+                borderRadius: 8,
+                cursor: query.trim() ? 'pointer' : 'default',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {loading ? <i className="ri-loader-4-line" style={{ animation: 'spin 1s linear infinite' }} /> : 'Search'}
+            </button>
           </div>
         </div>
 
@@ -233,8 +252,9 @@ export default function Search() {
                         <p style={{ fontWeight: 500, fontSize: '0.95rem', color: 'var(--primary)', marginBottom: '8px', lineHeight: 1.3 }}>{web.title}</p>
                         <p style={{ fontSize: '0.85rem', color: 'var(--foreground)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{web.description}</p>
                         {domain && (
-                          <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <i className="ri-links-line" /> {domain}
+                            {web.source && <span style={{ fontSize: '0.65rem', background: 'var(--muted)', padding: '1px 6px', borderRadius: '4px' }}>{web.source}</span>}
                           </p>
                         )}
                       </a>

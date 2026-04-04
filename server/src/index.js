@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 const connectDB = require('./config/database');
 
 // Route imports
@@ -16,11 +17,16 @@ const workspaceRoutes = require('./routes/workspace.routes');
 const noteRoutes     = require('./routes/note.routes');
 const aiRoutes       = require('./routes/ai.routes');
 const uploadRoutes   = require('./routes/upload.routes');
+const { initQueue, startWorker, closeQueue } = require('./queues/ai.queue');
 
 const app = express();
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize BullMQ queue + worker (graceful — no-op if REDIS_URL is missing)
+initQueue();
+startWorker();
 
 // Rate limiting
 const globalLimiter = rateLimit({
@@ -38,6 +44,7 @@ const authLimiter = rateLimit({
 });
 
 // Middleware - CORS must be first, before rate limiter
+app.use(compression()); // gzip all responses — reduces payload size ~80%
 const corsOptions = {
   origin: true, // Accept all origins — security enforced by httpOnly cookies
   credentials: true,
@@ -84,6 +91,18 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Memora server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`🚀 Memora server running on port ${PORT}`));
+
+// Graceful shutdown — close BullMQ & Redis before exit
+const shutdown = async (signal) => {
+  console.log(`\n[Server] ${signal} received — shutting down gracefully...`);
+  server.close(async () => {
+    await closeQueue();
+    console.log('[Server] Closed. Goodbye.');
+    process.exit(0);
+  });
+};
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));
 
 module.exports = app;

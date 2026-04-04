@@ -33,6 +33,8 @@ const itemSchema = new mongoose.Schema(
     topicCluster: { type: String },
     // Semantic embedding vector (gemini-embedding-001, 3072 dims)
     embedding: { type: [Number], select: false },
+    // Background AI processing flag — true while the BullMQ worker is running
+    aiProcessing: { type: Boolean, default: false },
     // Resurface tracking
     lastResurfacedAt: { type: Date },
     resurfaceCount: { type: Number, default: 0 },
@@ -40,11 +42,29 @@ const itemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Text search index
+// ── Indexes ───────────────────────────────────────────────────────
+
+// Full-text search (title, description, content, tags)
 itemSchema.index({ title: 'text', description: 'text', content: 'text', tags: 'text' });
-itemSchema.index({ embedding: 1 }, { sparse: true }); // sparse: only documents that have embedding
-itemSchema.index({ user: 1, createdAt: -1 });
-itemSchema.index({ user: 1, type: 1 });
-itemSchema.index({ user: 1, tags: 1 });
+
+// Embedding vector — sparse so unembedded docs are excluded automatically
+itemSchema.index({ embedding: 1 }, { sparse: true });
+
+// ━━ COMPOUND indexes (cover the actual query patterns used in controllers) ━━
+//
+// Pattern: { user, isArchived: false }  .sort({ createdAt: -1 })
+// Used by:  getItems, getGraphData, getResurfaceItems, tags aggregation, search
+itemSchema.index({ user: 1, isArchived: 1, createdAt: -1 });
+
+// Pattern: { user, isArchived: false, type }  (library type filter)
+itemSchema.index({ user: 1, isArchived: 1, type: 1 });
+
+// Pattern: { user, tags }  (library tag filter + tags aggregation)
+itemSchema.index({ user: 1, isArchived: 1, tags: 1 });
+
+// Pattern: { user, isArchived: false, resurfaceCount, createdAt }
+// Used by:  getResurfaceItems — "hidden gems" query
+itemSchema.index({ user: 1, isArchived: 1, resurfaceCount: 1, createdAt: 1 });
 
 module.exports = mongoose.model('Item', itemSchema);
+

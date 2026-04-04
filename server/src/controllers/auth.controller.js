@@ -1,5 +1,6 @@
-const jwt = require('jsonwebtoken');
+const jwt  = require('jsonwebtoken');
 const User = require('../models/User.model');
+const { invalidateUserCache } = require('../middleware/auth.middleware');
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET || 'memora_secret_key', { expiresIn: '30d' });
@@ -63,6 +64,7 @@ const updatePreferences = async (req, res) => {
       { preferences: req.body },
       { new: true }
     );
+    invalidateUserCache(req.user._id); // refresh cache so getMe returns updated prefs
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -73,11 +75,20 @@ const updatePreferences = async (req, res) => {
 // @route POST /api/auth/logout
 const logout = async (req, res) => {
   const isProd = process.env.NODE_ENV === 'production';
+  // Clear cookie
   res.clearCookie('memora_token', {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
   });
+  // Invalidate user cache so stale data isn't served on re-login
+  if (req.cookies?.memora_token) {
+    try {
+      const jwt2 = require('jsonwebtoken');
+      const decoded = jwt2.verify(req.cookies.memora_token, process.env.JWT_SECRET || 'memora_secret_key');
+      invalidateUserCache(decoded.id);
+    } catch { /* token already invalid, nothing to do */ }
+  }
   res.json({ success: true, message: 'Logged out successfully' });
 };
 

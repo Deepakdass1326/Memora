@@ -48,8 +48,15 @@ const noteSchema = new mongoose.Schema(
   }
 );
 
-// Indexing for search performance
+// ── Indexes ───────────────────────────────────────────────────────
+
+// Workspace-scoped note lookup (workspace page, note list)
 noteSchema.index({ user: 1, workspace: 1 });
-noteSchema.index({ tags: 1 });
+
+// Sort by date (Dashboard recent notes, global notes list)
+noteSchema.index({ user: 1, createdAt: -1 });
+
+// Tag filter — user-scoped (was missing user prefix, caused cross-user scan)
+noteSchema.index({ user: 1, tags: 1 });
 
 module.exports = mongoose.model('Note', noteSchema);

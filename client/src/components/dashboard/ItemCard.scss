@@ -120,6 +120,21 @@
     }
 
     &__tags { @include m.flex(row, center, flex-start, 4px); flex-wrap: wrap; margin-top: 2px; }
+
+    &__processing {
+      @include m.flex(row, center, flex-start, 5px);
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+      border-radius: 99px;
+      padding: 2px 9px;
+      margin-top: 2px;
+      animation: pulse-glow 2s ease-in-out infinite;
+
+      i { font-size: .75rem; }
+    }
   }
 
   // ── Footer ──

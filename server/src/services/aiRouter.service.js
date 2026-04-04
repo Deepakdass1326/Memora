@@ -105,7 +105,7 @@ const callMistral = async (systemPrompt, userPrompt) => {
 const callCohere = async (systemPrompt, userPrompt) => {
   const client = getCohere();
   const result = await client.chat({
-    model: 'command-r-plus',
+    model: 'command-r-08-2024',   // Updated: command-r-plus was retired Sept 2025
     preamble: systemPrompt,
     message: userPrompt,
     maxTokens: 1024,

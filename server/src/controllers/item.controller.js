@@ -5,6 +5,7 @@ const Note = require('../models/Note.model');
 const { generateTags, findRelatedItems } = require('../services/aiTagging.service');
 const { scrapeUrl } = require('../services/scraper.service');
 const { generateEmbedding, buildItemText } = require('../services/embedding.service');
+const { dispatchAIJob, isQueueAvailable } = require('../queues/ai.queue');
 
 // @desc  Get all items for user
 // @route GET /api/items
@@ -39,16 +40,83 @@ const getItems = async (req, res) => {
 const createItem = async (req, res) => {
   try {
     const { title, description, url, type, content, thumbnail, source, author, tags: manualTags, collections } = req.body;
-
-    // ── 1. Auto-scrape URL metadata if URL provided ──────────────────────
-    // Skip scraping for uploaded files (pdf/image) — URL is already an ImageKit CDN link
-    let scraped = null;
     const isUploadedFile = type === 'pdf' || type === 'image';
+
+    // ─────────────────────────────────────────────────────────────────────
+    // PATH A: BullMQ available → Save instantly, defer all AI to worker
+    // PATH B: No Redis → Sync fallback (old behavior)
+    // ─────────────────────────────────────────────────────────────────────
+    if (isQueueAvailable()) {
+      // ── Instant Save (minimal data, no AI wait) ──────────────────────────
+      // Do a quick scrape just to grab the title/thumbnail so the card
+      // looks good immediately. The worker will do a full deep scrape.
+      let quickScraped = null;
+      if (url && !isUploadedFile) {
+        try { quickScraped = await scrapeUrl(url); } catch (_) {}
+      }
+
+      const finalTitle       = title       || quickScraped?.title       || 'Untitled';
+      const finalDescription = description || quickScraped?.description || '';
+      const finalThumbnail   = thumbnail   || quickScraped?.thumbnail   || '';
+      const finalSource      = source      || quickScraped?.source      || '';
+      const finalAuthor      = author      || quickScraped?.author      || '';
+      const finalContent     = content     || quickScraped?.content     || '';
+
+      const item = new Item({
+        user:          req.user._id,
+        title:         finalTitle,
+        description:   finalDescription,
+        url,
+        type,
+        content:       finalContent,
+        thumbnail:     finalThumbnail,
+        source:        finalSource,
+        author:        finalAuthor,
+        tags:          manualTags || [],   // Worker will add AI tags
+        topicCluster:  'general',          // Worker will update
+        collections:   collections || [],
+        aiProcessing:  true,               // Shows spinner badge on card
+      });
+
+      await item.save();
+
+      // Update collection counts & user stats
+      if (collections?.length) {
+        await Collection.updateMany({ _id: { $in: collections } }, { $inc: { itemCount: 1 } });
+      }
+      await User.findByIdAndUpdate(req.user._id, { $inc: { 'stats.totalItems': 1 } });
+
+      // Dispatch the full AI pipeline to the BullMQ worker
+      await dispatchAIJob({
+        itemId:         item._id.toString(),
+        userId:         req.user._id.toString(),
+        isUploadedFile,
+        // Pass already-scraped data to avoid double-scraping
+        scraped: quickScraped ? {
+          content:     quickScraped.content,
+          description: quickScraped.description,
+          thumbnail:   quickScraped.thumbnail,
+        } : null,
+      });
+
+      const populated = await Item.findById(item._id)
+        .populate('collections', 'name emoji color');
+
+      // Return immediately — user sees the card right away!
+      return res.status(201).json({
+        success: true,
+        data: populated,
+        suggestedTags: manualTags || [],
+        queued: true,
+      });
+    }
+
+    // ── PATH B: Synchronous fallback (no Redis configured) ───────────────
+    let scraped = null;
     if (url && !isUploadedFile) {
       scraped = await scrapeUrl(url);
     }
 
-    // User-provided fields win; scraped data fills in the blanks
     const finalTitle       = title       || scraped?.title       || 'Untitled';
     const finalDescription = description || scraped?.description || '';
     const finalThumbnail   = thumbnail   || scraped?.thumbnail   || '';
@@ -56,44 +124,27 @@ const createItem = async (req, res) => {
     const finalAuthor      = author      || scraped?.author      || '';
     const finalContent     = content     || scraped?.content     || '';
 
-    // ── 2. AI tag generation (Gemini or rule-based fallback) ──────────────
     const { tags: aiTags, topicCluster } = await generateTags({
-      title: finalTitle,
-      description: finalDescription,
-      content: finalContent,
-      type,
-      source: finalSource,
+      title: finalTitle, description: finalDescription,
+      content: finalContent, type, source: finalSource,
     });
 
     const finalTags = [...new Set([...(manualTags || []), ...aiTags])];
 
-    // ── 3. Save item ───────────────────────────────────────────────────────
     const item = new Item({
-      user: req.user._id,
-      title: finalTitle,
-      description: finalDescription,
-      url,
-      type,
-      content: finalContent,
-      thumbnail: finalThumbnail,
-      source: finalSource,
-      author: finalAuthor,
-      tags: finalTags,
-      topicCluster,
-      collections: collections || [],
+      user: req.user._id, title: finalTitle, description: finalDescription,
+      url, type, content: finalContent, thumbnail: finalThumbnail,
+      source: finalSource, author: finalAuthor, tags: finalTags,
+      topicCluster, collections: collections || [], aiProcessing: false,
     });
 
     await item.save();
 
-    // ── 4. Update collection counts ────────────────────────────────────────
     if (collections?.length) {
       await Collection.updateMany({ _id: { $in: collections } }, { $inc: { itemCount: 1 } });
     }
-
-    // ── 5. Update user stats ───────────────────────────────────────────────
     await User.findByIdAndUpdate(req.user._id, { $inc: { 'stats.totalItems': 1 } });
 
-    // ── 6. Find & link related items (async, non-blocking) ─────────────────
     const userItems = await Item.find({ user: req.user._id, _id: { $ne: item._id } }).select('_id tags topicCluster type');
     const related = await findRelatedItems({ ...item.toObject(), tags: finalTags }, userItems);
     if (related.length) {
@@ -101,31 +152,20 @@ const createItem = async (req, res) => {
       await Item.updateMany({ _id: { $in: related } }, { $addToSet: { relatedItems: item._id } });
     }
 
-    // ── 7. Generate & store semantic embedding (non-blocking — don't await) ──
-    //    We fire this off after responding so it never slows the save API.
+    // Embedding — non-blocking
     setImmediate(async () => {
       try {
-        const embeddingText = buildItemText({
-          title: finalTitle,
-          tags: [...new Set([...(manualTags || []), ...aiTags])],
-          description: finalDescription,
-          content: finalContent,
-        });
+        const embeddingText = buildItemText({ title: finalTitle, tags: finalTags, description: finalDescription, content: finalContent });
         const embedding = await generateEmbedding(embeddingText, 'RETRIEVAL_DOCUMENT');
-        if (embedding) {
-          await Item.findByIdAndUpdate(item._id, { embedding });
-          console.log(`[Embedding] Stored ${embedding.length}-dim vector for item ${item._id}`);
-        }
-      } catch (e) {
-        console.warn('[Embedding] Background store failed:', e.message);
-      }
+        if (embedding) await Item.findByIdAndUpdate(item._id, { embedding });
+      } catch (e) { console.warn('[Embedding] Background store failed:', e.message); }
     });
 
     const populated = await Item.findById(item._id)
       .populate('collections', 'name emoji color')
       .populate('relatedItems', 'title type thumbnail');
 
-    res.status(201).json({ success: true, data: populated, suggestedTags: aiTags });
+    res.status(201).json({ success: true, data: populated, suggestedTags: aiTags, queued: false });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -222,10 +262,13 @@ const reanalyzeItem = async (req, res) => {
 // @route PATCH /api/items/:id/favorite
 const toggleFavorite = async (req, res) => {
   try {
-    const item = await Item.findOne({ _id: req.params.id, user: req.user._id });
+    // Single atomic op — no need to fetch the item first
+    const item = await Item.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      [{ $set: { isFavorite: { $not: '$isFavorite' } } }], // pipeline update
+      { new: true }
+    );
     if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-    item.isFavorite = !item.isFavorite;
-    await item.save();
     res.json({ success: true, data: { isFavorite: item.isFavorite } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -307,32 +350,39 @@ const getGraphData = async (req, res) => {
       ...notes.map(n => ({ id: n._id, tags: n.tags || [], relatedItems: [] })),
     ];
 
-    const links = [];
+    // ── O(n×m) tag-indexed link computation (was O(n²×m) nested forEach) ──────
+    // Build a reverse index: tag → [entity IDs]
+    const links   = [];
     const nodeIds = new Set(nodes.map(n => String(n.id)));
-
+    const tagIndex = {};
     allEntities.forEach(entity => {
-      // 1. Explicit related items
-      (entity.relatedItems || []).forEach(relId => {
-        if (!nodeIds.has(relId.toString())) return;
-        const exists = links.some(l =>
-          (l.source === entity.id.toString() && l.target === relId.toString()) ||
-          (l.source === relId.toString() && l.target === entity.id.toString())
-        );
-        if (!exists) links.push({ source: entity.id.toString(), target: relId.toString() });
+      (entity.tags || []).forEach(tag => {
+        if (!tagIndex[tag]) tagIndex[tag] = [];
+        tagIndex[tag].push(entity.id.toString());
       });
+    });
 
-      // 2. Shared tags links (across items AND notes)
-      allEntities.forEach(other => {
-        if (entity.id.toString() === other.id.toString()) return;
-        const sharedTags = entity.tags.filter(t => (other.tags || []).includes(t));
-        if (sharedTags.length > 0) {
-          const exists = links.some(l =>
-            (l.source === entity.id.toString() && l.target === other.id.toString()) ||
-            (l.source === other.id.toString() && l.target === entity.id.toString())
-          );
-          if (!exists) links.push({ source: entity.id.toString(), target: other.id.toString() });
-        }
+    // For each tag that has multiple entities, link those entities together
+    const linkSet = new Set();
+    const addLink = (a, b) => {
+      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      if (!linkSet.has(key)) { linkSet.add(key); links.push({ source: a, target: b }); }
+    };
+
+    // Explicit relatedItems links
+    allEntities.forEach(entity => {
+      (entity.relatedItems || []).forEach(relId => {
+        if (nodeIds.has(relId.toString())) addLink(entity.id.toString(), relId.toString());
       });
+    });
+
+    // Tag-based links via index (single pass per tag group)
+    Object.values(tagIndex).forEach(entityIds => {
+      for (let i = 0; i < entityIds.length; i++) {
+        for (let j = i + 1; j < entityIds.length; j++) {
+          addLink(entityIds[i], entityIds[j]);
+        }
+      }
     });
 
     // Tag-based cluster map (all entities)

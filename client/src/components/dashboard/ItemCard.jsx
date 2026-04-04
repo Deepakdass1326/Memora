@@ -1,5 +1,5 @@
 import './ItemCard.scss';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useItems } from '../../context/ItemsContext';
 import { formatRelative, getTypeColor, getClusterColor, getDomain } from '../../utils/helpers.jsx';
@@ -14,6 +14,21 @@ export default function ItemCard({ item, onOpen }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [reanalyzing, setReanalyzing] = useState(false);
+
+  // ── Auto-poll while AI is processing in the background ──────────────────
+  useEffect(() => {
+    if (!item.aiProcessing) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/items/${item._id}`);
+        if (res.data.success && !res.data.data.aiProcessing) {
+          patchItem(item._id, res.data.data);
+          clearInterval(interval);
+        }
+      } catch (_) {}
+    }, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, [item._id, item.aiProcessing, patchItem]);
 
   const handleReanalyze = async (e) => {
     e.stopPropagation();
@@ -81,7 +96,14 @@ export default function ItemCard({ item, onOpen }) {
         </div>
         <h3 className="card-body__title">{item.title}</h3>
         {item.description && <p className="card-body__desc">{item.description}</p>}
-        {item.tags?.length > 0 && (
+        {/* AI Processing Badge */}
+        {item.aiProcessing && (
+          <div className="card-body__processing">
+            <i className="ri-sparkling-2-line" style={{ animation: 'spin 1.5s linear infinite' }} />
+            <span>AI tagging...</span>
+          </div>
+        )}
+        {item.tags?.length > 0 && !item.aiProcessing && (
           <div className="card-body__tags">
             {item.tags.slice(0, 3).map(t => <span key={t} className="tag-pill" style={{ fontSize: '.65rem', padding: '1px 8px' }}>{t}</span>)}
             {item.tags.length > 3 && <span className="tag-pill" style={{ fontSize: '.65rem', padding: '1px 8px' }}>+{item.tags.length - 3}</span>}
