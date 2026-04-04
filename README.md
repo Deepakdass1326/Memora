@@ -166,7 +166,7 @@ Since the extension is currently in beta and not yet on the Chrome Web Store, yo
 |---|---|
 | **React 18 + Vite** | UI framework with lightning-fast HMR |
 | **React Router DOM** | Client-side routing & navigation |
-| **Zustand** | Lightweight global state management |
+| **React Context API** | Native global state management |
 | **Framer Motion** | Micro-animations and transitions |
 | **Remixicon** | Icon library |
 | **Vanilla CSS / SCSS** | Custom design system (no Tailwind) |
@@ -287,7 +287,7 @@ Memora/
 │   ├── src/
 │   │   ├── pages/           # Dashboard, Library, Search, Graph, Workspace
 │   │   ├── components/      # Reusable UI (ItemCard, Sidebar, Navbar)
-│   │   ├── store/           # Zustand global state
+│   │   ├── context/         # React Context state management
 │   │   ├── services/        # Axios API calls
 │   │   └── styles/          # Global CSS design system
 │   └── vercel.json          # Vercel deployment config (SPA rewrites)
@@ -313,7 +313,7 @@ Memora/
 
 <div align="center">
 
-Made with ❤️ by [Deepak Dass](https://github.com/Deepakdass1326)
+Made by [Deepak Dass](https://github.com/Deepakdass1326)
 
 ⭐ **Star this repo** if Memora helped you build a smarter second brain!
 
