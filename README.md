@@ -63,13 +63,14 @@ An interactive visual graph that maps everything you know:
 ### 🤖 Multi-LLM Routing (AI Engine)
 Every saved item is automatically processed in the background by an intelligent AI router:
 
-| Task | Model Used | Why |
+| Task | Primary Model | Why |
 |---|---|---|
-| Auto-tagging & Categorization | Gemini Flash | Fast, cheap, accurate for classification |
-| Long-form Summarization | Cohere Command | Optimized for document summarization |
+| Auto-tagging & Classification | Cohere (`command-r`) | Excellent at zero-shot classification |
+| Summarization | Mistral (`mistral-small`) | Quality reasoning, cost-effective |
+| Note Generation & Transcripts | Gemini (`2.5 Flash`) | Lightning fast, huge context window |
 | Semantic Embedding | Gemini Embedding | High-dimensional vectors for similarity search |
 
-The router dispatches tasks via **BullMQ + Redis queues** — your UI never waits for AI.
+The router includes built-in fallback chains (e.g., if Cohere fails, it tries Gemini) and dispatches tasks via **BullMQ + Redis queues** — your UI never waits for AI.
 
 ---
 
@@ -85,6 +86,7 @@ Inspired by spaced repetition, Memora intelligently resurfaces forgotten content
 ### 📝 Rich-Text Workspace / Notes
 - Workspaces group multiple notes together like a mini Notion
 - Notes editor supports headings, lists, code blocks, tables, and more
+- Inline workspace deletion: Delete workspaces directly from the sidebar
 - Notes are full participants in the Knowledge Graph — they link to Items automatically via shared tags
 
 ---
@@ -183,10 +185,11 @@ Since the extension is currently in beta and not yet on the Chrome Web Store, yo
 ### AI & External APIs
 | Technology | Purpose |
 |---|---|
-| **Google Gemini** | Auto-tagging, summarization, embeddings |
-| **Cohere** | Command model for long-form summarization  |
+| **Google Gemini** | Note generation, transcripts, embeddings |
+| **Cohere** | Command model for auto-tagging and classification |
+| **Mistral AI** | Mistral Small optimized for long-form summarization |
 | **YouTube Data API v3** | Fetch video metadata for search results |
-| **ImageKit.io** | CDN-backed image and file storage |
+| **ImageKit.io** | CDN-backed image and PDF file storage |
 
 ---
 
