@@ -10,7 +10,7 @@
 
 <br />
 
-[![Live App](https://img.shields.io/badge/🚀%20Live%20App-Visit%20Memora-6366f1?style=for-the-badge)](https://memora-frontend.vercel.app)
+[![Live App](https://img.shields.io/badge/🚀%20Live%20App-Visit%20Memora-6366f1?style=for-the-badge)](https://memora-three-iota.vercel.app)
 [![Backend Health](https://img.shields.io/badge/API-Online-22c55e?style=for-the-badge)](https://memora-backend-24mk.onrender.com/api/health)
 [![License](https://img.shields.io/badge/License-MIT-f59e0b?style=for-the-badge)](#)
 
@@ -93,18 +93,25 @@ Inspired by spaced repetition, Memora intelligently resurfaces forgotten content
 
 ### 🔌 Chrome Extension
 A lightweight browser extension that lets you:
-- Save any webpage to your Memora library in one click
-- Automatically captures the page title, URL, description, and thumbnail
-- Communicates securely with the backend via httpOnly cookies
+- Save any webpage to your Memora library in **one click** from any site
+- Auto-detects content type — Article, Video, Tweet, Image, Link, or Wishlist (shopping sites)
+- Scrapes product prices from Amazon, Flipkart, Myntra, Meesho, and more
+- Seamlessly syncs your login session from the web app — no separate login needed
+- All API calls go directly to the **production backend** (`memora-backend-24mk.onrender.com`)
+- "View in Memora" and "Open Memora" buttons open the live production app
 
 #### How to Install the Extension (For New Users)
 Since the extension is currently in beta and not yet on the Chrome Web Store, you can manually install it via Google Drive:
-1. **Download the Extension:** [Download Memora Extension ZIP (Google Drive)](https://drive.google.com/file/d/1J0_uXPLprenDHzsr_jXkXCbES4oB9aXG/view?usp=sharing)
+1. **Download the Extension:** [Download Memora Extension ZIP (Google Drive)](https://drive.google.com/file/d/1Zj1wnZ1o9jnmAG9d_1tPjmN5j4u1J1Pc/view?usp=sharing)
 2. Click the **Download** icon to download the `.zip` file, and extract it to a folder on your computer.
 3. Open Google Chrome and go to `chrome://extensions/`
 4. Turn ON **Developer mode** (toggle in the top-right corner).
 5. Click **Load unpacked** and select the folder you just extracted.
-6. Pin the Memora extension to your toolbar. Log in to the web app to automatically sync your account, and you're ready to save!
+6. Pin the Memora extension to your toolbar.
+7. **Log in** on [memora-three-iota.vercel.app](https://memora-three-iota.vercel.app) — your session will automatically sync to the extension.
+8. Click the Memora icon on any page and hit **Save to Memora** — done! ✅
+
+> **Note:** After installing or updating the extension, always reload it from `chrome://extensions/` and log in once on the web app to sync your auth token.
 
 ---
 
@@ -205,6 +212,8 @@ These are intentional engineering decisions made to keep Memora fast at scale:
 | Auth middleware | DB hit on every request | In-memory user cache (30s TTL) | ~80% fewer DB reads |
 | DB Queries | Missing `isArchived` in indexes | Compound `{user, isArchived, createdAt}` indexes | Eliminates full collection scans |
 | API responses | Uncompressed JSON | Gzip compression via `compression` middleware | ~80% smaller payloads |
+| Login / Register speed | bcrypt `saltRounds: 12` (~3–5s on low-CPU) | Reduced to `saltRounds: 10` (industry standard) | ~60–70% faster auth |
+| MongoDB cold start | Default 30s selection timeout | `serverSelectionTimeoutMS: 5000` | Fast-fail in 5s instead of hanging |
 
 ---
 
