@@ -134,11 +134,23 @@ export default function ItemDetail() {
           )}
 
           <h1 className="detail-title">{item.title}</h1>
-          {item.description && <p className="detail-desc">{item.description}</p>}
+          {item.description && (
+            <div className="detail-summary-block">
+              <p className="detail-summary-text">{item.description}</p>
+            </div>
+          )}
 
           {item.content && (
             <div className="detail-body" ref={contentRef} onMouseUp={handleMouseUp}>
-              {item.content.split('\n\n').map((para, i) => <p key={i}>{para}</p>)}
+              {item.content
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .split(/\n\n|\. (?=[A-Z])/)
+                .filter(p => p.trim().length > 30)
+                .map((para, i) => <p key={i}>{para.trim()}</p>)
+              }
             </div>
           )}
 

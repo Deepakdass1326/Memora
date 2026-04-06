@@ -1,6 +1,4 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
+// Pure JS class merger — no external deps needed (Memora uses Vanilla CSS, not Tailwind)
 export function cn(...inputs) {
-  return twMerge(clsx(inputs));
+  return inputs.filter(Boolean).join(' ');
 }

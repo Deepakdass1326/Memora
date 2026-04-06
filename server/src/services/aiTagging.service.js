@@ -116,9 +116,10 @@ const generateTags = async (item) => {
   const { routeRequest, HAS_COHERE } = require('./aiRouter.service');
   const validClusters = Object.keys(TOPIC_CLUSTERS).concat(['general']);
 
-  const systemPrompt = `You are a knowledge organization assistant. Analyze the given content and return ONLY a JSON object with exactly these two keys:
+  const systemPrompt = `You are a knowledge organization assistant. Analyze the given content and return ONLY a JSON object with exactly these three keys:
 - "tags": an array of 5-8 lowercase single-word or short-phrase tags (e.g. ["machine-learning","python","tutorial"])
 - "topicCluster": exactly ONE string from: technology, design, science, business, health, philosophy, culture, productivity, general
+- "summary": 2-3 sentences in plain English explaining what this content is about and why it is worth saving. No HTML, no markdown, no bullet points.
 
 IMPORTANT CLUSTER GUIDE:
 - culture = youtube videos, comedy, entertainment, music, film, tv shows, gaming, sports, humor, podcasts, food, travel, art
@@ -166,8 +167,12 @@ Type: ${item.type || 'link'}`;
         ? result.topicCluster
         : detectTopicClusterRuleBased(tags, item.title, item.description);
 
+      const summary = typeof result.summary === 'string' && result.summary.trim()
+        ? result.summary.trim()
+        : null;
+
       console.log(`[AI Tagging] ${model} tags:`, tags, '| Cluster:', topicCluster);
-      return { tags, topicCluster };
+      return { tags, topicCluster, summary };
     } catch (err) {
       console.warn(`[AI Tagging] ${model} failed:`, err.message);
     }
@@ -177,7 +182,7 @@ Type: ${item.type || 'link'}`;
   console.log('[AI Tagging] Using rule-based fallback');
   const tags = generateTagsRuleBased(item);
   const topicCluster = detectTopicClusterRuleBased(tags, item.title, item.description);
-  return { tags, topicCluster };
+  return { tags, topicCluster, summary: null };
 };
 
 

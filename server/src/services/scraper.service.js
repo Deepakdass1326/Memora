@@ -6,6 +6,17 @@ const cheerio = require('cheerio');
  * Fetches a URL and extracts OpenGraph metadata + body content for AI tagging.
  */
 
+// Strip HTML tags and decode common entities from a string
+const stripHtml = (str) => {
+  if (!str) return '';
+  return str
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // remove <style> blocks
+    .replace(/<[^>]+>/g, ' ')                        // remove all HTML tags
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 // ── YouTube helper ─────────────────────────────────────────
 const getYouTubeVideoId = (url) => {
   try {
@@ -115,7 +126,7 @@ const scrapeUrl = async (url) => {
 
     return {
       title: title.slice(0, 200),
-      description: description.slice(0, 500),
+      description: stripHtml(description).slice(0, 500),
       thumbnail,
       author,
       source,

@@ -101,7 +101,7 @@ const startWorker = () => {
 
         // ── Step 2: AI Tag Generation ──────────────────────────────────────
         job.updateProgress(25);
-        let aiTags, topicCluster;
+        let aiTags, topicCluster, aiSummary = null;
 
         if (item.type === 'product') {
           // Product-specific prompt: extract brand, category, features
@@ -114,17 +114,19 @@ const startWorker = () => {
 
           const raw = await routeRequest(
             'tag',
-            'You are a shopping assistant. Given a product name and description, respond with ONLY a JSON object with two keys: "tags" (array of 5-8 lowercase keywords: brand name, product category, key features) and "topicCluster" (one of: electronics, fashion, home, sports, books, beauty, food, other).',
+            'You are a shopping assistant. Given a product name and description, respond with ONLY a JSON object with three keys: "tags" (array of 5-8 lowercase keywords: brand name, product category, key features), "topicCluster" (one of: electronics, fashion, home, sports, books, beauty, food, other), and "summary" (2-3 plain-English sentences describing what this product is, its key features, and its price if available — no HTML, no markdown).',
             productContext
           ).catch(() => null);
 
           try {
             const parsed = JSON.parse((raw || '').replace(/```json|```/g, '').trim());
-            aiTags      = Array.isArray(parsed.tags) ? parsed.tags : ['product', 'wishlist'];
+            aiTags       = Array.isArray(parsed.tags) ? parsed.tags : ['product', 'wishlist'];
             topicCluster = parsed.topicCluster || 'other';
+            aiSummary    = typeof parsed.summary === 'string' ? parsed.summary.trim() : null;
           } catch {
             aiTags       = ['product', 'wishlist'];
             topicCluster = 'other';
+            aiSummary    = null;
           }
         } else {
           // Standard article/video/link tagging
@@ -137,6 +139,7 @@ const startWorker = () => {
           });
           aiTags       = result.tags;
           topicCluster = result.topicCluster;
+          aiSummary    = result.summary || null;
         }
 
 
@@ -173,11 +176,13 @@ const startWorker = () => {
           tags:         aiTags,
           topicCluster,
           aiProcessing: false,
-          ...(finalDescription && !item.description && { description: finalDescription }),
-          ...(finalThumbnail   && !item.thumbnail   && { thumbnail:   finalThumbnail }),
-          ...(finalContent     && !item.content     && { content:     finalContent }),
-          ...(embedding        && { embedding }),
-          ...(related.length   && { relatedItems: related }),
+          // Always overwrite description with AI summary if available (removes raw HTML junk)
+          ...(aiSummary                              && { description: aiSummary }),
+          ...(!aiSummary && finalDescription && !item.description && { description: finalDescription }),
+          ...(finalThumbnail && !item.thumbnail      && { thumbnail:   finalThumbnail }),
+          ...(finalContent   && !item.content        && { content:     finalContent }),
+          ...(embedding                              && { embedding }),
+          ...(related.length                        && { relatedItems: related }),
         };
 
         await Item.findByIdAndUpdate(itemId, updatePayload);
