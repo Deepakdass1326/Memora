@@ -5,7 +5,7 @@
  * v1.1.0 — Added product/wishlist scraping for shopping sites.
  */
 
-const API_BASE = 'http://localhost:5000/api'; // change to production URL when deploying
+const API_BASE = 'https://memora-backend-24mk.onrender.com/api';
 
 let selectedType = 'article';
 let currentTab   = null;

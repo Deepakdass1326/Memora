@@ -19,16 +19,16 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
-    const { user } = res.data;
-    window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token: 'cookie_managed' }, '*');
+    const { user, token } = res.data;
+    window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token }, '*');
     setUser(user);
     return user;
   }, []);
 
   const register = useCallback(async (name, email, password) => {
     const res = await api.post('/auth/register', { name, email, password });
-    const { user } = res.data;
-    window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token: 'cookie_managed' }, '*');
+    const { user, token } = res.data;
+    window.postMessage({ source: 'memora_web', type: 'MEMORA_SYNC_TOKEN', token }, '*');
     setUser(user);
     return user;
   }, []);

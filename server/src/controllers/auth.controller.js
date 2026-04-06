@@ -26,7 +26,7 @@ const register = async (req, res) => {
     const user = await User.create({ name, email, password });
     const token = generateToken(user._id);
     setTokenCookie(res, token);
-    res.status(201).json({ success: true, user });
+    res.status(201).json({ success: true, token, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -43,7 +43,7 @@ const login = async (req, res) => {
     }
     const token = generateToken(user._id);
     setTokenCookie(res, token);
-    res.json({ success: true, user });
+    res.json({ success: true, token, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -6,7 +6,7 @@
   "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": [
     "http://localhost:5000/*",
-    "https://*.memora.app/*",
+    "https://memora-backend-24mk.onrender.com/*",
     "https://*.amazon.in/*",
     "https://*.amazon.com/*",
     "https://*.flipkart.com/*",
@@ -42,7 +42,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://localhost:5173/*", "https://*.memora.app/*"],
+      "matches": [
+        "http://localhost:5173/*",
+        "https://memora-three-iota.vercel.app/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
